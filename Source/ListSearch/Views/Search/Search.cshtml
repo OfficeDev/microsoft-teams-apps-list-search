@@ -1,0 +1,39 @@
+﻿@model System.Collections.Generic.List<ListSearch.Models.KBInfo>
+@{
+    Layout = null;
+}
+@Styles.Render("~/Content/css")
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Search</title>
+    <script src="~/Scripts/MicrosoftTeams-1.4.1.min.js"></script>
+    <script>
+        microsoftTeams.initialize();
+        function listClick(kbId, kbName) {
+            var token = '@ViewData["token"]';
+            window.location.href = "/search/SearchList?kbId=" + kbId + "&kbName=" + kbName+"&token="+token;
+        }
+    </script>
+</head>
+<body>
+    <div class="parentDiv">
+        <b>Select the data source you wish to search</b>
+        <label class="greyCustomColor">Select one.</label>
+        <div id="searchLists" class="searchDiv">
+            @if (Model != null)
+            {
+                foreach (var item in Model)
+                {
+                    <div onclick="listClick('@item.KBId', '@item.KBName')" style="cursor:pointer" class="column">
+                        <label class="clickableLabel"><img class="listImage" src="~/Images/ListImage.PNG" alt="Search list @item.KBName" /><span class="listText">@item.KBName</span></label>
+                    </div>
+                }
+            }
+        </div>
+        <div style="float:right; padding-top:1em;"><button class="feedbackButton button">Send Feedback</button></div>
+    </div>
+</body>
+</html>

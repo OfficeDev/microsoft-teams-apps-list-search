@@ -1,0 +1,5 @@
+Storage Account
+App Service (Contains ME Web app and bot)
+App Service (Contains config app)
+Application Insights instance
+

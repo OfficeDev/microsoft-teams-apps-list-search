@@ -1,0 +1,66 @@
+﻿@model Lib.Models.SelectedSearchResult
+@{
+    Layout = null;
+}
+@Styles.Render("~/Content/css")
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>ResultCard</title>
+    <script src="~/Scripts/jquery-3.3.1.js"></script>
+
+</head>
+<body>
+    <div>
+        <meta name="viewport" content="width=device-width" />
+        <div style="border: black solid 1px; margin: 1em; padding: 1em">
+            <div style="float:left">
+                <img src="~/Images/ListImage.PNG" style="width:50px" />
+            </div>
+
+            @if (Model != null)
+            {
+                <div style="float:left; padding-left: 1em">
+                    <h1 style="margin:0; padding-bottom:1em">@Model.KBName</h1>
+                </div>
+                <div style="display:block; clear:both">
+                    <b>@Model.Question</b>
+                    @foreach (Lib.Models.DeserializedAnswer answer in Model.Answers)
+                    {
+                        <label>@answer.Question : @answer.Answer</label>
+                    }
+                </div>
+            }
+        </div>
+        <div style="margin:1em">
+            @{
+                var JsonSerializerSettings = new Newtonsoft.Json.JsonSerializerSettings()
+                {
+                    ContractResolver = new ListSearch.Helpers.CamelCaseExceptDictionaryKeysResolver(),
+                    Formatting = Newtonsoft.Json.Formatting.Indented,
+                };
+
+                string json = Newtonsoft.Json.JsonConvert.SerializeObject(Model, JsonSerializerSettings);
+            }
+            <button onclick='shareCard(@json)' class="button shareButton">Share</button>
+            <button class="button backButton" onclick="goBack()">&lt; Back</button>
+        </div>
+    </div>
+    <script src="~/Scripts/MicrosoftTeams-1.4.1.min.js"></script>
+    <script>
+        microsoftTeams.initialize();
+        function shareCard(card) {
+            microsoftTeams.tasks.submitTask(card);
+        }
+        function goBack() {
+            window.history.back();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,73 @@
+﻿@{
+    Layout = null;
+}
+@Styles.Render("~/Content/css")
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>SearchList</title>
+    <script src="~/Scripts/jquery-3.3.1.js"></script>
+</head>
+<body>
+    <div id="searchKeyword" style="width:100%">
+        <input id="txtSearch" placeholder="Enter a search term..." style="width:100%" />
+    </div>
+    <div id="loader" style="display:none" class="loader">
+        Loading...
+    </div>
+    <div id="searchResults" style="width:100%">
+        @Html.Partial("SearchResults")
+    </div>
+    <script>
+        var typingTimer;
+        var doneTypingInterval = @System.Configuration.ConfigurationManager.AppSettings["SearchDelayInMilliseconds"]; //in milliseconds
+        var $input = $('#txtSearch');
+        $input.on('keyup', function () {
+            clearTimeout(typingTimer);
+            typingTimer = setTimeout(doneTyping, doneTypingInterval);
+        });
+
+        $input.on('keydown', function () {
+            clearTimeout(typingTimer);
+        });
+        $(document).ajaxSend(function () {
+            $('#searchResults').hide();
+            $("#loader").show();
+        });
+        function doneTyping() {
+            var typedData = $input.val();
+            var searchedKb = '@ViewData["searchedKb"]';
+            var token = '@ViewData["token"]';
+            $.ajax({
+                type: "GET",
+                beforeSend: function (request) {
+                    request.setRequestHeader("Authorization", "bearer " + token);
+                },
+                url: '@Url.Action("SearchResults")',
+                data: { searchedKeyword: typedData, searchedKb: searchedKb },
+                success: function (result) {
+                    if ($('#txtSearch').val() === typedData) {
+                        $('#searchResults').html(result);
+                        $("#loader").hide();
+                        $('#searchResults').show();
+                    }
+                },
+                error: function (status) {
+                    if ($('#txtSearch').val() === typedData) {
+                        $('#searchResults').text('Result: ' + status.statusText)
+                        $("#loader").hide();
+                        $('#searchResults').show();
+                    }
+                }
+            });
+        }
+        $(document).ready(function () {
+            if ($('#txtSearch').length > 0 && $('#txtSearch').val()!="") {
+                doneTyping();
+            }
+        });
+    </script>
+</body>
+</html>

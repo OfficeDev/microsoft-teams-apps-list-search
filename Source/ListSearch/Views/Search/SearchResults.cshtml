@@ -1,0 +1,56 @@
+﻿@model Lib.Models.GenerateAnswerResponse
+<div id="resultsText">
+    @if (Model != null && Model.Answers != null)
+    {
+        bool count = (Model.Answers?.Count == 1 && Model.Answers[0].Answer == "No good match found in KB.");
+        if (!count)
+        {
+            <label>@Model.Answers.Count Result(s) Found</label>
+            <div style="height:40%; overflow-y:scroll">
+                @foreach (Lib.Models.QnAAnswer item in Model.Answers)
+                {
+                    <div class="searchResults" onclick='javascript: listItemClick(JSON.stringify(@item.Answer),"@item.Questions[0]")'>
+                        <label class="clickableLabel">@item.Questions[0]</label>
+                    </div>
+                }
+
+            </div>
+        }
+        else
+        {
+            <label class="greyCustomColor centerAlignText">No Results Found</label>
+        }
+    }
+    else
+    {
+        <label class="greyCustomColor centerAlignText">No Results Found</label>
+    }
+    <button class="button backButton" onclick="goBack()">&lt; Back</button>
+
+</div>
+<script>
+    function listItemClick(answer, question) {
+        var token = '@ViewData["token"]';
+
+        var dataContract = {
+            answer: answer,
+            question: question,
+            token : token,
+        }
+        $.ajax({
+            type: "PUT",
+            url: "/search/SetClickedItem",
+            data: dataContract,
+            dataType: "json",
+            success: function() {
+                window.location.href = "/search/ResultCard?token=" + token;
+            },
+            error: function() {
+                window.location.href = "/Error/Error";
+            }
+        });
+    }
+    function goBack() {
+        window.history.back();
+    }
+</script>
