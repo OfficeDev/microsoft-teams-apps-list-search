@@ -2,11 +2,10 @@
 // Copyright (c) Microsoft. All rights reserved.
 // </copyright>
 
-namespace ListSearch.Helpers
+namespace Lib.Helpers
 {
-    using System.Configuration;
     using System.Threading.Tasks;
-    using ListSearch.Models;
+    using Lib.Models;
     using Microsoft.WindowsAzure.Storage;
     using Microsoft.WindowsAzure.Storage.Blob;
 
@@ -23,9 +22,10 @@ namespace ListSearch.Helpers
         /// <summary>
         /// Initializes a new instance of the <see cref="BlobHelper"/> class.
         /// </summary>
-        public BlobHelper()
+        /// <param name="connectionString">connection string of storage.</param>
+        public BlobHelper(string connectionString)
         {
-            this.storageAccount = CloudStorageAccount.Parse(ConfigurationManager.AppSettings["StorageConnectionString"]);
+            this.storageAccount = CloudStorageAccount.Parse(connectionString);
             this.cloudBlobClient = this.storageAccount.CreateCloudBlobClient();
             this.cloudBlobContainer = this.cloudBlobClient.GetContainerReference(BlobContainerName);
         }

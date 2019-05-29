@@ -1,4 +1,4 @@
-﻿// <copyright file="JWTExceptionFilter.cs" company="Microsoft">
+﻿// <copyright file="JwtExceptionFilter.cs" company="Microsoft">
 // Copyright (c) Microsoft. All rights reserved.
 // </copyright>
 
@@ -6,13 +6,13 @@ namespace ListSearch.Filters
 {
     using System.Linq;
     using System.Web.Mvc;
-    using ListSearch.Models;
+    using Lib.Models;
     using Microsoft.IdentityModel.Tokens;
 
     /// <summary>
     /// Custom exception handler.
     /// </summary>
-    public class JWTExceptionFilter : FilterAttribute, IExceptionFilter
+    public class JwtExceptionFilter : FilterAttribute, IExceptionFilter
     {
         private const string ErrorController = "Error";
         private const string GenericErrorView = "Error";

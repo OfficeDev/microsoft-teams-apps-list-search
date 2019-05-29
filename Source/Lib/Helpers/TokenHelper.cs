@@ -2,7 +2,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 // </copyright>
 
-namespace ListSearch.Helpers
+namespace Lib.Helpers
 {
     using System;
     using System.Configuration;
@@ -11,9 +11,7 @@ namespace ListSearch.Helpers
     using System.Security.Cryptography;
     using System.Text;
     using System.Threading.Tasks;
-    using System.Web.Http;
-    using ListSearch.Models;
-    using Microsoft.Azure;
+    using Lib.Models;
     using Microsoft.WindowsAzure.Storage;
     using Microsoft.WindowsAzure.Storage.Table;
     using Newtonsoft.Json;
@@ -31,26 +29,26 @@ namespace ListSearch.Helpers
         private readonly CloudTableClient cloudTableClient;
         private readonly string tokenEndpoint;
 
-        private readonly int insertSuccessResponseCode = 204;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="TokenHelper"/> class.
         /// </summary>
-        public TokenHelper()
+        /// <param name="connectionString">connection string of storage.</param>
+        /// <param name="tenantId">tenant Id.</param>
+        public TokenHelper(string connectionString, string tenantId)
         {
-            this.storageAccount = CloudStorageAccount.Parse(ConfigurationManager.AppSettings["StorageConnectionString"]);
+            this.storageAccount = CloudStorageAccount.Parse(connectionString);
             this.cloudTableClient = this.storageAccount.CreateCloudTableClient();
-            this.tokenEndpoint = $"https://login.microsoftonline.com/{ConfigurationManager.AppSettings["TenantId"]}/oauth2/v2.0/token";
+            this.tokenEndpoint = $"https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token";
         }
 
         /// <summary>
         /// Decrypt Token.
         /// </summary>
         /// <param name="token">Token to be decrypted.</param>
+        /// <param name="key">key to be used for decryption.</param>
         /// <returns>Decrypted token.</returns>
-        public static string DecryptToken(string token)
+        public static string DecryptToken(string token, string key)
         {
-            string key = ConfigurationManager.AppSettings["LoginAppClientSecret"];
             byte[] cipherBytes = Convert.FromBase64String(token);
             using (Aes encryptor = Aes.Create())
             {
@@ -81,16 +79,17 @@ namespace ListSearch.Helpers
         /// <param name="scope">scope</param>
         /// <param name="refreshToken">refresh token</param>
         /// <param name="tokenType">type of token to be fetched</param>
+        /// <param name="key">key to be used for encryption and decryption</param>
         /// <returns><see cref="Task"/> that resolves to <see cref="RefreshTokenResponse"/></returns>
-        public async Task<RefreshTokenResponse> GetRefreshToken(HttpClient httpClient, string clientId, string clientSecret, string scope, string refreshToken, string tokenType)
+        public async Task<RefreshTokenResponse> GetRefreshToken(HttpClient httpClient, string clientId, string clientSecret, string scope, string refreshToken, string tokenType, string key)
         {
             try
             {
                 string body = $"&client_id={clientId}" +
-                    $"&scope={scope}" +
-                    $"&refresh_token={DecryptToken(refreshToken)}" +
+                    $"&scope={Uri.EscapeDataString(scope)}" +
+                    $"&refresh_token={Uri.EscapeDataString(DecryptToken(refreshToken, key))}" +
                     $"&grant_type={RefreshTokenGrantType}" +
-                    $"&client_secret={clientSecret}";
+                    $"&client_secret={Uri.EscapeDataString(clientSecret)}";
 
                 var request = new HttpRequestMessage(HttpMethod.Post, this.tokenEndpoint)
                 {
@@ -104,18 +103,19 @@ namespace ListSearch.Helpers
                 {
                     PartitionKey = PartitionKey,
                     RowKey = tokenType,
-                    AccessToken = this.EncryptToken(refreshTokenResponse.AccessToken),
-                    RefreshToken = this.EncryptToken(refreshTokenResponse.RefreshToken),
+                    AccessToken = this.EncryptToken(refreshTokenResponse.AccessToken, key),
+                    RefreshToken = this.EncryptToken(refreshTokenResponse.RefreshToken, key),
                 };
 
                 TableResult storeTokenResponse = await this.StoreToken(tokenEntity, tokenType);
-                if (storeTokenResponse.HttpStatusCode == this.insertSuccessResponseCode)
+
+                if (storeTokenResponse.HttpStatusCode == (int)System.Net.HttpStatusCode.NoContent)
                 {
                     return refreshTokenResponse;
                 }
                 else
                 {
-                    throw new HttpResponseException((System.Net.HttpStatusCode)storeTokenResponse.HttpStatusCode); // TODO: Handle Exception
+                    throw new Exception($"HTTP Error code - {response.StatusCode}"); // TODO: Handle Exception
                 }
             }
             catch
@@ -126,7 +126,7 @@ namespace ListSearch.Helpers
         }
 
         /// <summary>
-        /// Gets token from storage. // TODO: change to key vault.
+        /// Gets token from storage.
         /// </summary>
         /// <param name="tokenType">type of token to be retrieved.</param>
         /// <returns>TokenEntity</returns>
@@ -140,34 +140,26 @@ namespace ListSearch.Helpers
         }
 
         /// <summary>
-        /// Stores token to storage. // TODO: move to key vault.
+        /// Stores token to storage.
         /// </summary>
         /// <param name="tokenEntity">entity to be stored.</param>
         /// <param name="tokenType">Token type</param>
         /// <returns><see cref="Task"/> that resolves to <see cref="TableResult"/></returns>
-        private async Task<TableResult> StoreToken(TokenEntity tokenEntity, string tokenType)
+        private Task<TableResult> StoreToken(TokenEntity tokenEntity, string tokenType)
         {
-            try
-            {
-                CloudTable cloudTable = this.cloudTableClient.GetTableReference(TokenTableName);
-                TableOperation insertOperation = TableOperation.InsertOrMerge(tokenEntity);
-                TableResult insertResult = await cloudTable.ExecuteAsync(insertOperation);
-                return insertResult;
-            }
-            catch
-            {
-                throw;
-            }
+            CloudTable cloudTable = this.cloudTableClient.GetTableReference(TokenTableName);
+            TableOperation insertOperation = TableOperation.InsertOrMerge(tokenEntity);
+            return cloudTable.ExecuteAsync(insertOperation);
         }
 
         /// <summary>
         /// Encrypt Token.
         /// </summary>
         /// <param name="token">Token to be encrypted.</param>
+        /// <param name="key">key to be used for encryption and decryption.</param>
         /// <returns>Encrypted token.</returns>
-        private string EncryptToken(string token)
+        private string EncryptToken(string token, string key)
         {
-            string key = ConfigurationManager.AppSettings["LoginAppClientSecret"];
             byte[] clearBytes = Encoding.UTF8.GetBytes(token);
             using (Aes encryptor = Aes.Create())
             {

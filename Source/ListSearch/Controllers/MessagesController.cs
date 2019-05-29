@@ -9,11 +9,10 @@ namespace ListSearch.Controllers
     using System.Configuration;
     using System.Net;
     using System.Net.Http;
-    using System.Threading.Tasks;
     using System.Web.Http;
     using AdaptiveCards;
+    using Lib.Helpers;
     using Lib.Models;
-    using ListSearch.Helpers;
     using ListSearch.Models;
     using ListSearch.Resources;
     using Microsoft.Bot.Connector;
@@ -28,8 +27,20 @@ namespace ListSearch.Controllers
     /// </summary>
     public class MessagesController : ApiController
     {
-        private readonly string messagingExtensionWidth = "medium";
-        private readonly string adaptiveCardVersion = "1.0";
+        private const int HeightInPixels = 532;
+        private const int WidthInPixels = 600;
+        private const string AdaptiveCardVersion = "1.0";
+
+        private readonly JwtHelper jwtHelper;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MessagesController"/> class.
+        /// </summary>
+        /// <param name="jwtHelper">instance of jwt helper</param>
+        public MessagesController(JwtHelper jwtHelper)
+        {
+            this.jwtHelper = jwtHelper;
+        }
 
         /// <summary>
         /// POST: api/Messages
@@ -38,7 +49,7 @@ namespace ListSearch.Controllers
         /// <param name="activity">Activity from the UI.</param>
         /// <returns>A <see cref="System.Threading.Tasks.Task"/> representing the asynchronous operation.</returns>
         [Route("api/Messages")]
-        public async Task<HttpResponseMessage> Post([FromBody]Activity activity)
+        public HttpResponseMessage Post([FromBody]Activity activity)
         {
             if (activity == null)
             {
@@ -61,12 +72,13 @@ namespace ListSearch.Controllers
             {
                 string user = activity.From.Id;
                 string tenant = activity.GetTenantId();
-                string jwt = JWTHelper.GenerateJWT(activity.From.Id, activity.From.Properties["aadObjectId"].ToString(), activity.GetTenantId());
+                string jwt = this.jwtHelper.GenerateJWT(activity.From.Id, activity.From.Properties["aadObjectId"].ToString(), activity.GetTenantId(), Convert.ToInt32(ConfigurationManager.AppSettings["JWTExpiryMinutes"]));
                 TaskInfo taskInfo = new TaskInfo()
                 {
                     Url = $"{ConfigurationManager.AppSettings["WebAppUrl"]}/search/search?token={jwt}",
                     Title = Strings.MessagingExtensionTitle,
-                    Width = this.messagingExtensionWidth
+                    Width = WidthInPixels,
+                    Height = HeightInPixels,
                 };
                 TaskSubmitResponse taskEnvelope = new TaskSubmitResponse()
                 {
@@ -76,78 +88,63 @@ namespace ListSearch.Controllers
             }
             else if (activity.Name == "composeExtension/submitAction")
             {
-                SelectedSearchResult selectedSearchResult = JsonConvert.DeserializeObject<SelectedSearchResult>(((JObject)activity.Value)["data"].ToString());
+                var jsonSerializerSettings = new Newtonsoft.Json.JsonSerializerSettings()
+                {
+                    ContractResolver = new Lib.Helpers.CamelCaseExceptDictionaryKeysResolver(),
+                    Formatting = Newtonsoft.Json.Formatting.None,
+                };
+                var reply = ((JObject)activity.Value)["data"].ToString();
+                SelectedSearchResult selectedSearchResult = JsonConvert.DeserializeObject<SelectedSearchResult>(reply, jsonSerializerSettings);
+
                 List<AdaptiveFact> facts = new List<AdaptiveFact>();
                 foreach (DeserializedAnswer child in selectedSearchResult.Answers)
                 {
                     facts.Add(new AdaptiveFact()
                     {
-                        Title = Convert.ToString(child.Question),
+                        Title = Convert.ToString(child.Question + ":"),
                         Value = Convert.ToString(child.Answer),
                     });
                 }
 
-                AdaptiveCard card = new AdaptiveCard(this.adaptiveCardVersion)
+                string sharePointUrl = selectedSearchResult.SharePointURL;
+                sharePointUrl = sharePointUrl.Replace("AllItems.aspx", $"DispForm.aspx?ID={selectedSearchResult.Id}");
+
+                AdaptiveCard card = new AdaptiveCard(AdaptiveCardVersion)
                 {
                     Body = new List<AdaptiveElement>()
+                {
+                    new AdaptiveContainer()
                     {
-                        new AdaptiveContainer()
+                        Items = new List<AdaptiveElement>()
                         {
-                            Items = new List<AdaptiveElement>()
+                            new AdaptiveTextBlock()
                             {
-                                new AdaptiveColumnSet()
-                                {
-                                    Columns = new List<AdaptiveColumn>()
-                                    {
-                                        new AdaptiveColumn()
-                                        {
-                                            Width = AdaptiveColumnWidth.Auto,
-                                            Items = new List<AdaptiveElement>()
-                                            {
-                                                new AdaptiveImage()
-                                                {
-                                                    Url = new Uri(ConfigurationManager.AppSettings["ListImageUrl"]),
-                                                    Size = AdaptiveImageSize.Medium,
-                                                }
-                                            }
-                                        },
-                                        new AdaptiveColumn()
-                                        {
-                                            Width = AdaptiveColumnWidth.Stretch,
-                                            Items = new List<AdaptiveElement>()
-                                            {
-                                                new AdaptiveTextBlock()
-                                                {
-                                                    Text = selectedSearchResult.KBName,
-                                                    Weight = AdaptiveTextWeight.Bolder,
-                                                    Wrap = true,
-                                                }
-                                            }
-                                        }
-                                    }
-                                },
-                            }
-                        },
-                        new AdaptiveContainer()
-                        {
-                            Items = new List<AdaptiveElement>()
-                            {
-                                new AdaptiveFactSet()
-                                {
-                                    Facts = facts ?? new List<AdaptiveFact>(),
-                                }
-                            }
+                                Text = selectedSearchResult.Question,
+                                Weight = AdaptiveTextWeight.Bolder,
+                                Wrap = true,
+                                Size = AdaptiveTextSize.Large
+                            },
                         }
                     },
-                    Actions = new List<AdaptiveAction>()
+                    new AdaptiveContainer()
                     {
-                        new AdaptiveOpenUrlAction()
+                        Items = new List<AdaptiveElement>()
                         {
-                            // TODO: Update with sharepoint item url.
-                            Url = new Uri("https://www.bing.com"),
-                            Title = "View More",
+                            new AdaptiveFactSet()
+                            {
+                                Facts = facts ?? new List<AdaptiveFact>(),
+                            }
                         }
                     }
+                },
+                Actions = new List<AdaptiveAction>()
+                {
+                    new AdaptiveOpenUrlAction()
+                    {
+                        Url = new Uri(sharePointUrl),
+                        Title = Strings.ResultCardButtonTitle,
+                    }
+                }
                 };
 
                 Attachment attachment = new Attachment()
@@ -162,7 +159,7 @@ namespace ListSearch.Controllers
                     {
                         Attachments = new List<ComposeExtensionAttachment>() { attachment.ToComposeExtensionAttachment() },
                         Type = ComposeExtensionResultType.TaskResult,
-                        AttachmentLayout = AttachmentLayout.List
+                        AttachmentLayout = AttachmentLayoutTypes.List
                     }
                 };
                 return this.Request.CreateResponse(HttpStatusCode.OK, composeExtensionResponse);

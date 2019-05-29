@@ -1,12 +1,11 @@
-﻿// <copyright file="JWTHelper.cs" company="Microsoft">
+﻿// <copyright file="JwtHelper.cs" company="Microsoft">
 // Copyright (c) Microsoft. All rights reserved.
 // </copyright>
 
-namespace ListSearch.Helpers
+namespace Lib.Helpers
 {
     using System;
     using System.Collections.Generic;
-    using System.Configuration;
     using System.IdentityModel.Tokens.Jwt;
     using System.Security.Claims;
     using System.Text;
@@ -15,7 +14,7 @@ namespace ListSearch.Helpers
     /// <summary>
     /// Helper class for JWT
     /// </summary>
-    public static class JWTHelper
+    public class JwtHelper
     {
         private const string JwtAuthenticationType = "Custom";
         private const string ClaimTypeSender = "Sender";
@@ -23,16 +22,31 @@ namespace ListSearch.Helpers
         private const string ClaimTypeUserAadId = "UserAadId";
         private const string ClaimTypeTenant = "Tenant";
 
+        private readonly string jwtSecurityKey;
+        private readonly string appId;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="JwtHelper"/> class.
+        /// </summary>
+        /// <param name="jwtSecurityKey">security key</param>
+        /// <param name="botId">microsoft app id of bot</param>
+        public JwtHelper(string jwtSecurityKey, string botId)
+        {
+            this.jwtSecurityKey = jwtSecurityKey;
+            this.appId = botId;
+        }
+
         /// <summary>
         /// Generates JWT
         /// </summary>
         /// <param name="userTeamsId">Teams id of sender</param>
         /// <param name="userAadId">Aad object Id of sender</param>
-        /// <param name="tenantId">Id of the tenant</param>
+        /// <param name="botTenantId">Tenant Id of bot</param>
+        /// <param name="jwtExpiryMinutes">minutes in which jwt expires</param>
         /// <returns><see cref="string"/> that represents generated jwt</returns>
-        public static string GenerateJWT(string userTeamsId, string userAadId, string tenantId)
+        public string GenerateJWT(string userTeamsId, string userAadId, string botTenantId, int jwtExpiryMinutes)
         {
-            SymmetricSecurityKey signingKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(ConfigurationManager.AppSettings["JWTSecurityKey"]));
+            SymmetricSecurityKey signingKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(this.jwtSecurityKey));
             SigningCredentials signingCredentials = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);
 
             SecurityTokenDescriptor securityTokenDescriptor = new SecurityTokenDescriptor()
@@ -43,13 +57,13 @@ namespace ListSearch.Helpers
                         new Claim(ClaimTypeSender, "bot"),
                         new Claim(ClaimTypeUserTeamsId, userTeamsId),
                         new Claim(ClaimTypeUserAadId, userAadId),
-                        new Claim(ClaimTypeTenant, tenantId)
+                        new Claim(ClaimTypeTenant, botTenantId)
                     }, JwtAuthenticationType),
                 NotBefore = DateTime.UtcNow,
                 SigningCredentials = signingCredentials,
-                Issuer = ConfigurationManager.AppSettings["MicrosoftAppId"],
+                Issuer = this.appId,
                 IssuedAt = DateTime.UtcNow,
-                Expires = DateTime.UtcNow.AddMinutes(Convert.ToInt32(ConfigurationManager.AppSettings["JWTExpiryMinutes"])),
+                Expires = DateTime.UtcNow.AddMinutes(jwtExpiryMinutes),
             };
             JwtSecurityTokenHandler tokenHandler = new JwtSecurityTokenHandler();
             SecurityToken token = tokenHandler.CreateToken(securityTokenDescriptor);
@@ -60,15 +74,16 @@ namespace ListSearch.Helpers
         /// Validate JWT
         /// </summary>
         /// <param name="jwt">jwt to be validated</param>
+        /// <param name="acceptingTenantId">TenantId of web app</param>
         /// <returns><see cref="bool"/> representing success/failure of jwt validation</returns>
-        public static bool ValidateJWT(string jwt)
+        public bool ValidateJWT(string jwt, string acceptingTenantId)
         {
-            SymmetricSecurityKey signingKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(ConfigurationManager.AppSettings["JWTSecurityKey"]));
+            SymmetricSecurityKey signingKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(this.jwtSecurityKey));
             TokenValidationParameters validationParameters = new TokenValidationParameters()
             {
                 ValidateAudience = false,
                 ValidateIssuer = true,
-                ValidIssuer = ConfigurationManager.AppSettings["MicrosoftAppId"],
+                ValidIssuer = this.appId,
                 ValidateIssuerSigningKey = true,
                 IssuerSigningKey = signingKey,
                 RequireExpirationTime = true,
@@ -82,7 +97,7 @@ namespace ListSearch.Helpers
                 ClaimsPrincipal myPrincipal = myTokenHandler.ValidateToken(jwt, validationParameters, out mytoken);
 
                 JwtSecurityToken claimsValidator = (JwtSecurityToken)mytoken;
-                if (!myPrincipal.HasClaim(ClaimTypeTenant, ConfigurationManager.AppSettings["TenantId"]))
+                if (!myPrincipal.HasClaim(ClaimTypeTenant, acceptingTenantId))
                 {
                     throw new SecurityTokenException($"Claim for {ClaimTypeTenant} does not match the expected value.");
                 }

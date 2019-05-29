@@ -14,8 +14,6 @@ namespace ListSearch.Controllers
     using Lib.Helpers;
     using Lib.Models;
     using ListSearch.Filters;
-    using ListSearch.Helpers;
-    using ListSearch.Models;
     using ListSearch.Resources;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
@@ -26,15 +24,22 @@ namespace ListSearch.Controllers
     public class SearchController : Controller
     {
         private readonly System.Net.Http.HttpClient httpClient;
+        private readonly JwtHelper jwtHelper;
         private readonly int topResultsToBeFetched = 5;
+        private readonly string tenantId;
+        private readonly string connectionString;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SearchController"/> class.
         /// </summary>
         /// <param name="httpClient">Http client to be used.</param>
-        public SearchController(System.Net.Http.HttpClient httpClient)
+        /// <param name="jwtHelper">JWT Helper.</param>
+        public SearchController(System.Net.Http.HttpClient httpClient, JwtHelper jwtHelper)
         {
             this.httpClient = httpClient;
+            this.jwtHelper = jwtHelper;
+            this.tenantId = ConfigurationManager.AppSettings["TenantId"];
+            this.connectionString = ConfigurationManager.AppSettings["StorageConnectionString"];
         }
 
         /// <summary>
@@ -43,46 +48,29 @@ namespace ListSearch.Controllers
         /// <param name="token">jwt auth token.</param>
         /// <returns><see cref="ActionResult"/> representing Search view.</returns>
         [HandleError]
-        [JWTExceptionFilter]
+        [JwtExceptionFilter]
         public async Task<ActionResult> Search(string token)
         {
-            JWTHelper.ValidateJWT(token);
+            this.jwtHelper.ValidateJWT(token, this.tenantId);
 
             this.ViewData["token"] = token;
-            KBInfoHelper kBInfoHelper = new KBInfoHelper();
-            List<KBInfo> kbList = await kBInfoHelper.GetAllKBs(new string[] { nameof(KBInfo.KBName) });
+
+            KBInfoHelper kBInfoHelper = new KBInfoHelper(this.connectionString);
+            List<KBInfo> kbList = await kBInfoHelper.GetAllKBs(new string[] { nameof(KBInfo.KBName), nameof(KBInfo.KBId), nameof(KBInfo.QuestionField), nameof(KBInfo.AnswerFields) });
+
             return this.View(kbList);
-        }
-
-        /// <summary>
-        /// Search List View
-        /// </summary>
-        /// <param name="kbId">Id of the kb to be queried.</param>
-        /// <param name="kbName">Name of the kb to be queried.</param>
-        /// /// <param name="token">jwt auth token.</param>
-        /// <returns><see cref="ActionResult"/> representing Search List view.</returns>
-        [HandleError]
-        [JWTExceptionFilter]
-        public ActionResult SearchList(string kbId, string kbName, string token)
-        {
-            JWTHelper.ValidateJWT(token);
-
-            this.ViewData["token"] = token;
-            this.ViewData["searchedKb"] = kbId;
-            this.Session["kbId"] = kbId;
-            this.Session["kbName"] = kbName;
-            return this.View();
         }
 
         /// <summary>
         /// Search Result View
         /// </summary>
         /// <param name="searchedKeyword">Keyword searched by the user.</param>
-        /// <param name="searchedKb">kb from which the keyword is to be searched.</param>
-        /// <returns>Task that resolves to <see cref="ActionResult"/> representing Search Results view.</returns>
+        /// <param name="kbId">kb Id.</param>
+        /// <param name="kbName">kb Name.</param>
+        /// <returns>Task that resolves to <see cref="PartialViewResult"/> representing Search Results partial view.</returns>
         [HandleError]
-        [JWTExceptionFilter]
-        public async Task<PartialViewResult> SearchResults(string searchedKeyword, string searchedKb)
+        [JwtExceptionFilter]
+        public async Task<PartialViewResult> SearchResults(string searchedKeyword, string kbId, string kbName)
         {
             var token = string.Empty;
             var authHeader = this.Request.Headers["Authorization"];
@@ -91,14 +79,12 @@ namespace ListSearch.Controllers
                 token = authHeader.Split(' ')[1];
             }
 
-            JWTHelper.ValidateJWT(token);
+            this.jwtHelper.ValidateJWT(token, this.tenantId);
 
             this.ViewData["token"] = token;
             this.ViewData["searchKeyword"] = searchedKeyword;
 
-            string kbId = this.Session["kbId"]?.ToString() ?? Strings.KBIdNotFound;
-
-            KBInfoHelper kBInfoHelper = new KBInfoHelper();
+            KBInfoHelper kBInfoHelper = new KBInfoHelper(this.connectionString);
             KBInfo kbInfo = await kBInfoHelper.GetKBInfo(kbId);
 
             string hostUrl = ConfigurationManager.AppSettings["HostUrl"];
@@ -109,66 +95,75 @@ namespace ListSearch.Controllers
             GenerateAnswerRequest generateAnswerRequest = new GenerateAnswerRequest(searchedKeyword, top);
             GenerateAnswerResponse result = await qnAMakerHelper.GenerateAnswerAsync(generateAnswerRequest);
 
-            return this.PartialView(result);
+            List<SelectedSearchResult> selectedSearchResults = new List<SelectedSearchResult>();
+
+            this.Session["SharePointUrl"] = kbInfo.SharePointUrl;
+
+            // To check if answers list has some values or not. If it has some values then proceed
+            if (result != null)
+            {
+                // If answers value score is not equal to 0.0 and then no need to proceed
+                if (result.Answers.Count > 0 && result.Answers[0].Score != 0.0)
+                {
+                    foreach (QnAAnswer item in result.Answers)
+                    {
+                        List<ColumnInfo> answerFields = JsonConvert.DeserializeObject<List<ColumnInfo>>(kbInfo.AnswerFields);
+                        JObject answerObj = JsonConvert.DeserializeObject<JObject>(item.Answer);
+                        List<DeserializedAnswer> answers = this.DeserializeAnswers(JObject.Parse(answerObj.ToString()), answerFields);
+
+                        selectedSearchResults.Add(new SelectedSearchResult()
+                        {
+                            KBId = kbId,
+                            KBName = kbName,
+                            Question = item.Questions[0],
+                            Answers = answers,
+                            Id = answerObj["id"].ToString(),
+                        });
+                    }
+                }
+            }
+
+            return this.PartialView(selectedSearchResults);
         }
 
         /// <summary>
-        /// Result Card View
+        /// Result Card Partial View
         /// </summary>
-        /// /// <param name="token">jwt auth token.</param>
-        /// <returns>Task that resolves to <see cref="ActionResult"/> representing Result Card view.</returns>
+        /// <param name="kbId">kd id</param>
+        /// <param name="kbName">kb name</param>
+        /// <returns><see cref="PartialViewResult"/> representing Result card partial view.</returns>
         [HandleError]
-        [JWTExceptionFilter]
-        public async Task<ActionResult> ResultCard(string token)
+        [JwtExceptionFilter]
+        public PartialViewResult ResultCardPartial(string kbId, string kbName)
         {
-            JWTHelper.ValidateJWT(token);
+            var token = string.Empty;
+            var authHeader = this.Request.Headers["Authorization"];
+            if (authHeader?.StartsWith("bearer") ?? false)
+            {
+                token = authHeader.Split(' ')[1];
+            }
+
+            this.jwtHelper.ValidateJWT(token, this.tenantId);
+
+            this.ViewData["token"] = token;
 
             string selectedAnswer = Convert.ToString(this.Session["selectdAnswer"]);
             string selectedQuestion = Convert.ToString(this.Session["selectedQuestion"]);
-            KBInfoHelper kBInfoHelper = new KBInfoHelper();
+            string selectedItemId = Convert.ToString(this.Session["selectedItemId"]);
 
-            string kbName = this.Session["kbName"]?.ToString() ?? Strings.KBNameNotFound;
-            string kbId = this.Session["kbId"]?.ToString() ?? Strings.KBIdNotFound;
+            List<DeserializedAnswer> answers = JsonConvert.DeserializeObject<List<DeserializedAnswer>>(selectedAnswer);
 
-            List<string> answerFields = await kBInfoHelper.GetAnswerFields(kbId);
-            JObject answerObj = JsonConvert.DeserializeObject<JObject>(selectedAnswer);
-
-            List<DeserializedAnswer> answers = this.DeserializeAnswers(JObject.Parse(answerObj.ToString()), answerFields);
             SelectedSearchResult selectedSearchResult = new SelectedSearchResult()
             {
                 KBName = kbName,
                 KBId = kbId,
                 Question = selectedQuestion,
                 Answers = answers,
+                Id = selectedItemId,
+                SharePointURL = this.Session["SharePointUrl"].ToString(),
             };
-            return this.View(selectedSearchResult);
-        }
 
-        /// <summary>
-        /// Error view
-        /// </summary>
-        /// <returns><see cref="ActionResult"/> for Error view.</returns>
-        public ActionResult Error()
-        {
-            return this.View();
-        }
-
-        /// <summary>
-        /// Error view for expired tokens.
-        /// </summary>
-        /// <returns><see cref="ActionResult"/> for Token expired error view.</returns>
-        public ActionResult TokenExpiredError()
-        {
-            return this.View();
-        }
-
-        /// <summary>
-        /// Error view for unauthorizedAccess
-        /// </summary>
-        /// <returns><see cref="ActionResult"/> for Unauthorized access error view.</returns>
-        public ActionResult UnauthorizedAccess()
-        {
-            return this.View();
+            return this.PartialView(selectedSearchResult);
         }
 
         /// <summary>
@@ -176,15 +171,19 @@ namespace ListSearch.Controllers
         /// </summary>
         /// <param name="answer">answer string</param>
         /// <param name="question">question string</param>
+        /// <param name="id">id of selected item</param>
         /// <param name="token">jwt auth token.</param>
         /// <returns><see cref="JsonResult"/> denoting success</returns>
         [HttpPut]
-        public JsonResult SetClickedItem(string answer, string question, string token)
+        [HandleError]
+        [JwtExceptionFilter]
+        public JsonResult SetClickedItem(string answer, string question, string id, string token)
         {
-            ValidateToken(token, out _);
+            this.ValidateToken(token, out _);
 
             this.Session["selectdAnswer"] = answer;
             this.Session["selectedQuestion"] = question;
+            this.Session["selectedItemId"] = id;
             return this.Json("success");
         }
 
@@ -193,12 +192,12 @@ namespace ListSearch.Controllers
         /// </summary>
         /// <param name="token">JWT to be validated</param>
         /// <param name="tokenExpired">boolean value to check token has expired.</param>
-        private static void ValidateToken(string token, out bool tokenExpired)
+        private void ValidateToken(string token, out bool tokenExpired)
         {
             try
             {
                 tokenExpired = false;
-                JWTHelper.ValidateJWT(token);
+                this.jwtHelper.ValidateJWT(token, this.tenantId);
             }
             catch (Exception ex)
             {
@@ -220,16 +219,16 @@ namespace ListSearch.Controllers
         /// <param name="qnaAnswer">qna Answer</param>
         /// <param name="answerFields">answer fields</param>
         /// <returns><see cref="System.Collections.Generic.List{String}"/> objects representing questions and answers.</returns>
-        private List<DeserializedAnswer> DeserializeAnswers(JObject qnaAnswer, List<string> answerFields)
+        private List<DeserializedAnswer> DeserializeAnswers(JObject qnaAnswer, List<ColumnInfo> answerFields)
         {
             List<DeserializedAnswer> deserializedAnswers = new List<DeserializedAnswer>();
 
-            foreach (string field in answerFields)
+            foreach (var field in answerFields)
             {
                 deserializedAnswers.Add(new DeserializedAnswer()
                 {
-                    Question = XmlConvert.DecodeName(field),
-                    Answer = Convert.ToString(qnaAnswer[field]),
+                    Question = XmlConvert.DecodeName(field.DisplayName),
+                    Answer = Convert.ToString(qnaAnswer[field.Name]),
                 });
             }
 

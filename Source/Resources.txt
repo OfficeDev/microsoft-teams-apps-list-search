@@ -1,5 +1,15 @@
-Storage Account
-App Service (Contains ME Web app and bot)
 App Service (Contains config app)
+
+Storage Account
+
 Application Insights instance
 
+Logic app (for refresh)
+
+API connection (to sharepoint) for Logic App
+
+QnA Maker Services:
+	Cognitive service
+	App Service plan
+	App Service (Contains ME Web app and bot)
+	Search Service

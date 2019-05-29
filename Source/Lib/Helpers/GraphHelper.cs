@@ -2,21 +2,20 @@
 // Copyright (c) Microsoft. All rights reserved.
 // </copyright>
 
-namespace ListSearch.Helpers
+namespace Lib.Helpers
 {
     using System;
-    using System.Configuration;
     using System.Net.Http;
     using System.Net.Http.Headers;
     using System.Threading.Tasks;
-    using ListSearch.Models;
+    using Lib.Models;
 
     /// <summary>
     /// Helper for Graph.
     /// </summary>
     public class GraphHelper
     {
-        private const string Scope = "offline_access%20https://graph.microsoft.com/Sites.Read.All";
+        private const string Scope = "offline_access https://graph.microsoft.com/Sites.Read.All";
         private const string GraphV1Endpoint = "https://graph.microsoft.com/v1.0";
 
         private readonly string clientId;
@@ -25,10 +24,12 @@ namespace ListSearch.Helpers
         /// <summary>
         /// Initializes a new instance of the <see cref="GraphHelper"/> class.
         /// </summary>
-        public GraphHelper()
+        /// <param name="appId">id of the app used for login.</param>
+        /// <param name="appSecret">secret for the app used for login.</param>
+        public GraphHelper(string appId, string appSecret)
         {
-            this.clientId = ConfigurationManager.AppSettings["LoginAppClientId"];
-            this.clientSecret = ConfigurationManager.AppSettings["LoginAppClientSecret"];
+            this.clientId = appId;
+            this.clientSecret = appSecret;
         }
 
         /// <summary>
@@ -39,12 +40,15 @@ namespace ListSearch.Helpers
         /// <param name="listId">Id of the list to be fetched.</param>
         /// <param name="fieldsToFetch">fields to fetch from list.</param>
         /// <param name="sharePointSiteId">site id of sharepoint site.</param>
+        /// <param name="connectionString">connection string of storage.</param>
+        /// <param name="tenantId">tenant Id.</param>
+        /// <param name="encryptionDecryptionKey">encryption decryption key.</param>
         /// <param name="odataNextUrl">url to fetch next page of data</param>
         /// <returns><see cref="Task"/> that resolves to <see cref="string"/> representing contents of the file.</returns>
-        public async Task<string> GetListContents(HttpClient httpClient, string refreshToken, string listId, string fieldsToFetch, string sharePointSiteId, string odataNextUrl = null)
+        public async Task<string> GetListContents(HttpClient httpClient, string refreshToken, string listId, string fieldsToFetch, string sharePointSiteId, string connectionString, string tenantId, string encryptionDecryptionKey, string odataNextUrl = null)
         {
-            TokenHelper tokenHelper = new TokenHelper();
-            RefreshTokenResponse refreshTokenResponse = await tokenHelper.GetRefreshToken(httpClient, this.clientId, this.clientSecret, Scope, refreshToken, TokenTypes.GraphTokenType);
+            TokenHelper tokenHelper = new TokenHelper(connectionString, tenantId);
+            RefreshTokenResponse refreshTokenResponse = await tokenHelper.GetRefreshToken(httpClient, this.clientId, this.clientSecret, Scope, refreshToken, TokenTypes.GraphTokenType, encryptionDecryptionKey);
             string uri;
             if (string.IsNullOrEmpty(odataNextUrl))
             {

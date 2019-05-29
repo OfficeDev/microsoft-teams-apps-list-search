@@ -7,13 +7,13 @@ namespace ListSearch.Controllers
     using System;
     using System.Collections.Generic;
     using System.Configuration;
+    using System.Linq;
     using System.Net.Http;
     using System.Threading.Tasks;
     using System.Web.Http;
     using Lib.Helpers;
     using Lib.Models;
     using ListSearch.Filters;
-    using ListSearch.Helpers;
     using ListSearch.Models;
     using Newtonsoft.Json;
 
@@ -22,7 +22,7 @@ namespace ListSearch.Controllers
     /// </summary>
     public class RefreshController : ApiController
     {
-        private const string JSONFileExtension = ".json";
+        private const string JsonFileExtension = ".json";
         private readonly HttpClient httpClient;
         private readonly string subscriptionKey;
 
@@ -47,11 +47,13 @@ namespace ListSearch.Controllers
         /// Refreshes all KBs due for a refresh
         /// </summary>
         /// <returns><see cref="Task"/> to refresh KBs.</returns>
+        [HttpPost]
         [HttpPatch]
         [RefreshAuthFilter]
         public async Task RefreshAllKBs()
         {
-            KBInfoHelper kBInfoHelper = new KBInfoHelper();
+            string connectionString = ConfigurationManager.AppSettings["StorageConnectionString"];
+            KBInfoHelper kBInfoHelper = new KBInfoHelper(connectionString);
             List<KBInfo> kbList = await kBInfoHelper.GetAllKBs(
                 fields: new string[]
                 {
@@ -63,7 +65,7 @@ namespace ListSearch.Controllers
                     nameof(KBInfo.SharePointSiteId),
                 });
 
-            BlobHelper blobHelper = new BlobHelper();
+            BlobHelper blobHelper = new BlobHelper(connectionString);
 
             foreach (var kb in kbList)
             {
@@ -83,14 +85,15 @@ namespace ListSearch.Controllers
 
                         do
                         {
-                            string blobName = Guid.NewGuid().ToString() + JSONFileExtension;
-                            listContents = await this.GetListContents(kb.SharePointListId, kb.AnswerFields, kb.QuestionField, kb.SharePointSiteId, listContents.ODataNextLink ?? null);
+                            ColumnInfo questionColumn = JsonConvert.DeserializeObject<ColumnInfo>(kb.QuestionField);
+                            string blobName = Guid.NewGuid().ToString() + JsonFileExtension;
+                            listContents = await this.GetListContents(kb.SharePointListId, kb.AnswerFields, questionColumn.Name, kb.SharePointSiteId, connectionString, listContents.ODataNextLink ?? null);
                             string blobUrl = await blobHelper.UploadBlobAsync(JsonConvert.SerializeObject(listContents), blobName);
                             blobInfoTemp.Add(blobName, new Uri(blobUrl));
                         }
                         while (!string.IsNullOrEmpty(listContents.ODataNextLink));
 
-                        await this.RefreshKB(kb.KBId, blobInfoTemp, kb.QuestionField, blobHelper);
+                        await this.RefreshKB(kb.KBId, blobInfoTemp, JsonConvert.DeserializeObject<ColumnInfo>(kb.QuestionField).Name, blobHelper);
 
                         // Delete all existing blobs for this KB
                         foreach (string blobName in blobInfoTemp.Keys)
@@ -125,14 +128,9 @@ namespace ListSearch.Controllers
                 throw new ArgumentException($"{nameof(kbId)} must not be null or whitespace");
             }
 
-            int filesExtracted = 0;
-            int counter = 0;
-            bool deletesourcesResult = false;
-            bool addSourcesResult = false;
-
             QnAMakerService qnAMakerService = new QnAMakerService(kbId, this.subscriptionKey, this.httpClient);
-
-            deletesourcesResult = await this.DeleteExistingSources(qnAMakerService);
+            bool deleteSourcesResult = await this.DeleteExistingSources(qnAMakerService);
+            bool addSourcesResult = true;
 
             // Less than 10 files
             if (blobInfo.Count < 10)
@@ -144,6 +142,9 @@ namespace ListSearch.Controllers
             else
             {
                 Dictionary<string, Uri> blobInfoBatch = new Dictionary<string, Uri>();
+                int filesExtracted = 0;
+                int counter = 0;
+
                 foreach (var entry in blobInfo)
                 {
                     // files still in blob info to be included in batch
@@ -156,22 +157,27 @@ namespace ListSearch.Controllers
                     }
 
                     // no more file left to include in batch
-                    addSourcesResult = await this.AddNewSources(kbId, blobInfoBatch, questionField, qnAMakerService);
+                    addSourcesResult = addSourcesResult && await this.AddNewSources(kbId, blobInfoBatch, questionField, qnAMakerService);
+                    blobInfoBatch.Clear();
 
                     if (filesExtracted < blobInfo.Count)
                     {
                         counter = 1;
                         filesExtracted++;
-                        blobInfoBatch.Clear();
                         blobInfoBatch.Add(entry.Key, entry.Value);
                     }
+                }
+
+                if (blobInfoBatch.Count > 0)
+                {
+                    addSourcesResult = addSourcesResult && await this.AddNewSources(kbId, blobInfoBatch, questionField, qnAMakerService);
                 }
             }
 
             // if delete or any of the updates fails, KB is not published. Retry on next refresh.
-            if (addSourcesResult && deletesourcesResult)
+            if (addSourcesResult && deleteSourcesResult)
             {
-                await this.PublishKB(qnAMakerService);
+                await qnAMakerService.PublishKB();
             }
         }
 
@@ -237,15 +243,6 @@ namespace ListSearch.Controllers
             return qnAMakerService.IsOperationSuccessful(addSourcesResultState);
         }
 
-        private async Task<bool> PublishKB(QnAMakerService qnAMakerService)
-        {
-            QnAMakerResponse publishResponse = new QnAMakerResponse();
-
-            string publishResultState = await qnAMakerService.AwaitOperationCompletionState(publishResponse);
-
-            return qnAMakerService.IsOperationSuccessful(publishResultState);
-        }
-
         /// <summary>
         /// Get the contents of the list.
         /// </summary>
@@ -253,24 +250,35 @@ namespace ListSearch.Controllers
         /// <param name="answerFields">Answer fields to be used for KB.</param>
         /// <param name="questionField">question field.</param>
         /// <param name="sharePointSiteId">site id of sharepoint site.</param>
+        /// <param name="connectionString">connection string of storage.</param>
         /// <param name="odataNextUrl">odata next url</param>
         /// <returns><see cref="Task"/> that resolves to <see cref="GetListContentsResponse"/> which represents the list response.</returns>
-        private async Task<GetListContentsResponse> GetListContents(string listId, string answerFields, string questionField, string sharePointSiteId, string odataNextUrl)
+        private async Task<GetListContentsResponse> GetListContents(string listId, string answerFields, string questionField, string sharePointSiteId, string connectionString, string odataNextUrl)
         {
-            TokenHelper tokenHelper = new TokenHelper();
+            string tenantId = ConfigurationManager.AppSettings["TenantId"];
+            string appId = ConfigurationManager.AppSettings["LoginAppClientId"];
+            string appSecret = ConfigurationManager.AppSettings["LoginAppClientSecret"];
+
+            TokenHelper tokenHelper = new TokenHelper(connectionString, tenantId);
             TokenEntity refreshTokenEntity = await tokenHelper.GetTokenEntity(TokenTypes.GraphTokenType);
-            GraphHelper graphHelper = new GraphHelper();
+            GraphHelper graphHelper = new GraphHelper(appId, appSecret);
 
-            System.Text.StringBuilder fieldsToFetch = new System.Text.StringBuilder();
-            fieldsToFetch.Append(questionField + ",");
-            foreach (string answerField in JsonConvert.DeserializeObject<List<string>>(answerFields))
-            {
-                fieldsToFetch.Append(answerField + ",");
-            }
+            var fieldsToFetch = string.Join(
+                ",",
+                JsonConvert.DeserializeObject<List<ColumnInfo>>(answerFields)
+                    .Select(field => field.Name)
+                    .Concat(new string[] { questionField, "id" }));
 
-            fieldsToFetch.Remove(fieldsToFetch.Length - 1, 1);
-
-            string responseBody = await graphHelper.GetListContents(this.httpClient, refreshTokenEntity.RefreshToken, listId, fieldsToFetch.ToString(), sharePointSiteId, odataNextUrl);
+            string responseBody = await graphHelper.GetListContents(
+                httpClient: this.httpClient,
+                refreshToken: refreshTokenEntity.RefreshToken,
+                listId: listId,
+                fieldsToFetch: fieldsToFetch,
+                sharePointSiteId: sharePointSiteId,
+                connectionString: connectionString,
+                tenantId: tenantId,
+                encryptionDecryptionKey: appSecret,
+                odataNextUrl: odataNextUrl);
             return JsonConvert.DeserializeObject<GetListContentsResponse>(responseBody);
         }
     }

@@ -40,5 +40,11 @@ namespace Lib.Models
         /// </summary>
         [JsonProperty("sharepointURL")]
         public string SharePointURL { get; set; }
+
+        /// <summary>
+        /// Gets or sets Id
+        /// </summary>
+        [JsonProperty("id")]
+        public string Id { get; set; }
     }
 }

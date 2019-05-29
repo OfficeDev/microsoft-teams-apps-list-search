@@ -4,6 +4,7 @@
 
 namespace ListSearch.App_Start
 {
+    using System.Configuration;
     using System.Net.Http;
     using System.Reflection;
     using System.Web.Http;
@@ -11,6 +12,7 @@ namespace ListSearch.App_Start
     using Autofac;
     using Autofac.Integration.Mvc;
     using Autofac.Integration.WebApi;
+    using Lib.Helpers;
     using ListSearch.Controllers;
 
     /// <summary>
@@ -29,6 +31,9 @@ namespace ListSearch.App_Start
             builder.RegisterApiControllers(Assembly.GetExecutingAssembly());
 
             builder.Register(c => new HttpClient()).As<HttpClient>().SingleInstance();
+            builder.Register(c => new JwtHelper(
+                jwtSecurityKey: ConfigurationManager.AppSettings["JWTSecurityKey"],
+                botId: ConfigurationManager.AppSettings["MicrosoftAppId"])).As<JwtHelper>().SingleInstance();
 
             builder.RegisterType<SearchController>().InstancePerRequest();
             builder.RegisterType<RefreshController>().InstancePerRequest();

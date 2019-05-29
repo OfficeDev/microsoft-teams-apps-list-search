@@ -130,7 +130,7 @@
     <comment>Title for the Messaging Extension Popup.</comment>
   </data>
   <data name="ResultCardButtonTitle" xml:space="preserve">
-    <value>View More</value>
+    <value>Open</value>
     <comment>Title for the button on the final adaptive card View and the card to be sent to the user.</comment>
   </data>
 </root>

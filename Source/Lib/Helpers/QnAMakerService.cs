@@ -5,7 +5,6 @@ namespace Lib.Helpers
 {
     using System;
     using System.Net.Http;
-    using System.Net.Http.Headers;
     using System.Text;
     using System.Threading.Tasks;
     using Lib.Models;
@@ -22,7 +21,6 @@ namespace Lib.Helpers
         private const string QnAMakerRequestUrl = "https://westus.api.cognitive.microsoft.com/qnamaker/v4.0";
 
         private const string MethodKB = "knowledgebases";
-
         private const string MethodOperation = "operations";
 
         /// <summary>
@@ -95,167 +93,87 @@ namespace Lib.Helpers
         /// <inheritdoc/>
         public async Task<GenerateAnswerResponse> GenerateAnswerAsync(GenerateAnswerRequest request)
         {
-            try
+            string uri = $"{this.hostUrl}/qnamaker/{MethodKB}/{this.kbId}/generateAnswer";
+            using (var httpRequest = new HttpRequestMessage(HttpMethod.Post, uri))
             {
-                string service = "/qnamaker";
-                string method = "/knowledgebases/" + this.kbId + "/generateAnswer/";
-                string uri = this.hostUrl + service + method;
-                using (HttpRequestMessage httpRequest = new HttpRequestMessage())
-                {
-                    httpRequest.Method = HttpMethod.Post;
-                    httpRequest.RequestUri = new Uri(uri);
-                    httpRequest.Content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
-                    httpRequest.Headers.Add("Authorization", "EndpointKey " + this.endpointKey);
+                httpRequest.Content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+                httpRequest.Headers.Add("Authorization", "EndpointKey " + this.endpointKey);
 
-                    HttpResponseMessage response = await this.httpClient.SendAsync(httpRequest);
-                    if (response.IsSuccessStatusCode)
-                    {
-                        return JsonConvert.DeserializeObject<GenerateAnswerResponse>(await response.Content.ReadAsStringAsync());
-                    }
-                    else
-                    {
-                        throw new Exception($"HTTP Error code - {response.StatusCode} with reason phrase {response.ReasonPhrase}");
-                    }
-                }
-            }
-            catch
-            {
-                throw;
+                var response = await this.httpClient.SendAsync(httpRequest);
+                response.EnsureSuccessStatusCode();
+                return JsonConvert.DeserializeObject<GenerateAnswerResponse>(await response.Content.ReadAsStringAsync());
             }
         }
 
         /// <inheritdoc/>
         public async Task<QnAMakerResponse> UpdateKB(UpdateKBRequest body)
         {
-            try
+            string uri = $"{QnAMakerRequestUrl}/{MethodKB}/{this.kbId}";
+            using (var httpRequest = new HttpRequestMessage(new HttpMethod("PATCH"), uri))
             {
-                this.httpClient.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", this.subscriptionKey);
-                string uri = $"{QnAMakerRequestUrl}/{MethodKB}/{this.kbId}";
+                httpRequest.Content = new StringContent(JsonConvert.SerializeObject(body), Encoding.UTF8, "application/json");
+                httpRequest.Headers.Add("Ocp-Apim-Subscription-Key", this.subscriptionKey);
 
-                using (HttpRequestMessage httpRequest = new HttpRequestMessage())
-                {
-                    httpRequest.Method = new HttpMethod("PATCH");
-                    httpRequest.RequestUri = new Uri(uri);
-                    httpRequest.Content = new StringContent(JsonConvert.SerializeObject(body), Encoding.UTF8, "application/json");
-                    HttpResponseMessage response = await this.httpClient.SendAsync(httpRequest);
-                    if (response.IsSuccessStatusCode)
-                    {
-                        return JsonConvert.DeserializeObject<QnAMakerResponse>(await response.Content.ReadAsStringAsync());
-                    }
-                    else
-                    {
-                        throw new Exception($"HTTP Error code - {response.StatusCode} with reason phrase {response.ReasonPhrase}");
-                    }
-                }
-            }
-            catch
-            {
-                throw;
+                var response = await this.httpClient.SendAsync(httpRequest);
+                response.EnsureSuccessStatusCode();
+                return JsonConvert.DeserializeObject<QnAMakerResponse>(await response.Content.ReadAsStringAsync());
             }
         }
 
         /// <inheritdoc/>
-        public async Task<QnAMakerResponse> PublishKB()
+        public async Task<bool> PublishKB()
         {
-            try
+            var uri = $"{QnAMakerRequestUrl}/{MethodKB}/{this.kbId}";
+            using (var httpRequest = new HttpRequestMessage(HttpMethod.Post, uri))
             {
-                this.httpClient.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", this.subscriptionKey);
-                var uri = $"{QnAMakerRequestUrl}/{MethodKB}/{this.kbId}";
-                HttpResponseMessage response;
-                byte[] byteData = Encoding.UTF8.GetBytes("{body}");
-                using (var content = new ByteArrayContent(byteData))
-                {
-                    content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-                    response = await this.httpClient.PostAsync(uri, content);
-                    if (response.IsSuccessStatusCode)
-                    {
-                        return JsonConvert.DeserializeObject<QnAMakerResponse>(await response.Content.ReadAsStringAsync());
-                    }
-                    else
-                    {
-                        throw new Exception($"HTTP Error code - {response.StatusCode} with reason phrase {response.ReasonPhrase}");
-                    }
-                }
-            }
-            catch
-            {
-                throw;
+                httpRequest.Headers.Add("Ocp-Apim-Subscription-Key", this.subscriptionKey);
+
+                var response = await this.httpClient.SendAsync(httpRequest);
+                response.EnsureSuccessStatusCode();
+                return true;
             }
         }
 
         /// <inheritdoc/>
         public async Task<QnAMakerResponse> CreateKB(CreateKBRequest body)
         {
-            try
+            var uri = $"{QnAMakerRequestUrl}/{MethodKB}/create";
+            using (HttpRequestMessage httpRequest = new HttpRequestMessage(HttpMethod.Post, uri))
             {
-                this.httpClient.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", this.subscriptionKey);
-                var uri = $"{QnAMakerRequestUrl}/{MethodKB}/create";
+                httpRequest.Content = new StringContent(JsonConvert.SerializeObject(body), Encoding.UTF8, "application/json");
+                httpRequest.Headers.Add("Ocp-Apim-Subscription-Key", this.subscriptionKey);
 
-                using (HttpRequestMessage httpRequest = new HttpRequestMessage())
-                {
-                    httpRequest.Method = new HttpMethod("POST");
-                    httpRequest.RequestUri = new Uri(uri);
-                    httpRequest.Content = new StringContent(JsonConvert.SerializeObject(body), Encoding.UTF8, "application/json");
-                    HttpResponseMessage response = await this.httpClient.SendAsync(httpRequest);
-                    if (response.IsSuccessStatusCode)
-                    {
-                        return JsonConvert.DeserializeObject<QnAMakerResponse>(await response.Content.ReadAsStringAsync());
-                    }
-                    else
-                    {
-                        throw new Exception($"HTTP Error code - {response.StatusCode} with reason phrase {response.ReasonPhrase}");
-                    }
-                }
-            }
-            catch
-            {
-                throw;
+                var response = await this.httpClient.SendAsync(httpRequest);
+                response.EnsureSuccessStatusCode();
+                return JsonConvert.DeserializeObject<QnAMakerResponse>(await response.Content.ReadAsStringAsync());
             }
         }
 
         /// <inheritdoc/>
         public async Task<QnAMakerResponse> GetOperationDetails(string operationId)
         {
-            try
+            var uri = $"{QnAMakerRequestUrl}/{MethodOperation}/{operationId}";
+            using (HttpRequestMessage httpRequest = new HttpRequestMessage(HttpMethod.Get, uri))
             {
-                this.httpClient.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", this.subscriptionKey);
-                var uri = $"{QnAMakerRequestUrl}/{MethodOperation}/{operationId}";
-                var response = await this.httpClient.GetAsync(uri);
-                if (response.IsSuccessStatusCode)
-                {
-                    return JsonConvert.DeserializeObject<QnAMakerResponse>(await response.Content.ReadAsStringAsync());
-                }
-                else
-                {
-                    throw new Exception($"HTTP Error code - {response.StatusCode} with reason phrase {response.ReasonPhrase}");
-                }
-            }
-            catch
-            {
-                throw;
+                httpRequest.Headers.Add("Ocp-Apim-Subscription-Key", this.subscriptionKey);
+
+                var response = await this.httpClient.SendAsync(httpRequest);
+                response.EnsureSuccessStatusCode();
+                return JsonConvert.DeserializeObject<QnAMakerResponse>(await response.Content.ReadAsStringAsync());
             }
         }
 
         /// <inheritdoc/>
         public async Task<GetKnowledgeBaseDetailsResponse> GetKnowledgeBaseDetails()
         {
-            try
+            var uri = $"{QnAMakerRequestUrl}/{MethodKB}/{this.kbId}";
+            using (HttpRequestMessage httpRequest = new HttpRequestMessage(HttpMethod.Get, uri))
             {
-                this.httpClient.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", this.subscriptionKey);
-                var uri = $"{QnAMakerRequestUrl}/{MethodKB}/{this.kbId}";
-                var response = await this.httpClient.GetAsync(uri);
-                if (response.IsSuccessStatusCode)
-                {
-                    return JsonConvert.DeserializeObject<GetKnowledgeBaseDetailsResponse>(await response.Content.ReadAsStringAsync());
-                }
-                else
-                {
-                    throw new Exception($"HTTP Error code - {response.StatusCode} with reason phrase {response.ReasonPhrase}");
-                }
-            }
-            catch
-            {
-                throw;
+                httpRequest.Headers.Add("Ocp-Apim-Subscription-Key", this.subscriptionKey);
+
+                var response = await this.httpClient.SendAsync(httpRequest);
+                response.EnsureSuccessStatusCode();
+                return JsonConvert.DeserializeObject<GetKnowledgeBaseDetailsResponse>(await response.Content.ReadAsStringAsync());
             }
         }
 
@@ -263,19 +181,11 @@ namespace Lib.Helpers
         public async Task<string> AwaitOperationCompletionState(QnAMakerResponse response)
         {
             int delay = 1000; // ms
-            int count = 0;
             QnAMakerResponse getOperationDetailsResponse = response;
             while (!this.IsOperationComplete(getOperationDetailsResponse))
             {
-                // limit of 3 qps.
-                if (count == 3)
-                {
-                    await Task.Delay(delay);
-                    count = 0;
-                }
-
+                await Task.Delay(delay);
                 getOperationDetailsResponse = await this.GetOperationDetails(response.OperationId);
-                count++;
             }
 
             return getOperationDetailsResponse.OperationState;
@@ -312,10 +222,10 @@ namespace Lib.Helpers
                 StringBuilder details = new StringBuilder();
                 foreach (var detail in response.ErrorResponse.Error.Details)
                 {
-                    details.Append(detail + Environment.NewLine);
+                    details.AppendLine(detail.Message);
                 }
 
-                throw new Exception($"Error Code: {response.ErrorResponse.Error.Code} {Environment.NewLine} Error Message: {response.ErrorResponse.Error.Message} {Environment.NewLine} Error Details: {details.ToString()}");
+                throw new Exception($"Error Code: {response.ErrorResponse.Error.Code}\nError Message: {response.ErrorResponse.Error.Message}\nError Details: {details.ToString()}");
             }
         }
     }

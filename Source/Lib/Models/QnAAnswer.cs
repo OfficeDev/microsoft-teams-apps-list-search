@@ -29,7 +29,7 @@ namespace Lib.Models
         /// Gets or sets Score
         /// </summary>
         [JsonProperty("score")]
-        public string Score { get; set; }
+        public double Score { get; set; }
 
         /// <summary>
         /// Gets or sets Id

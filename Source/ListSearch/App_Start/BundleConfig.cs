@@ -33,8 +33,8 @@ namespace ListSearch
                       "~/Scripts/bootstrap.js"));
 
             bundles.Add(new StyleBundle("~/Content/css").Include(
-                      "~/Content/teams-custom.css",
-                      "~/Content/msteams-ui-styles-core.css"));
+                "~/Content/msteams-ui-styles-core.css",
+                "~/Content/customSite.css"));
         }
     }
 }

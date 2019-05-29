@@ -14,7 +14,7 @@ namespace ListSearch.Filters
     using ListSearch.Models;
 
     /// <summary>
-    /// Refresh Auth Filter
+    /// Authentication filter for the refresh endpoint
     /// </summary>
     public class RefreshAuthFilter : Attribute, IAuthenticationFilter
     {
@@ -23,39 +23,40 @@ namespace ListSearch.Filters
         /// </summary>
         public bool AllowMultiple
         {
-            get
-            {
-                return true;
-            }
+            get { return true; }
         }
 
         /// <summary>
-        /// Autheticate Async
+        /// Authenticate the incoming request
         /// </summary>
-        /// <param name="context">Http authentication context</param>
+        /// <param name="context">HTTP context</param>
         /// <param name="cancellationToken">cancellation token</param>
         /// <returns><see cref="Task"/> representing authenticate method.</returns>
-        public async Task AuthenticateAsync(HttpAuthenticationContext context, CancellationToken cancellationToken)
+        public Task AuthenticateAsync(HttpAuthenticationContext context, CancellationToken cancellationToken)
         {
             HttpRequestMessage request = context.Request;
             var authorization = request.Headers.Authorization;
             if (authorization == null)
             {
-                return;
+                context.ErrorResult = new AuthenticationFailureResult("Missing Authorization header", request);
+                return Task.CompletedTask;
             }
             else if (authorization.Scheme != "Basic")
             {
-                return;
+                context.ErrorResult = new AuthenticationFailureResult($"Invalid authorization scheme {authorization.Scheme}", request);
+                return Task.CompletedTask;
             }
             else if (string.IsNullOrEmpty(authorization.Parameter))
             {
-                context.ErrorResult = new AuthenticationFailureResult("Missing Credentials", request);
+                context.ErrorResult = new AuthenticationFailureResult("Missing credentials", request);
+                return Task.CompletedTask;
             }
 
             Tuple<string, string> userNameAndPassword = this.ExtractUserNameAndPassword(authorization.Parameter);
             if (userNameAndPassword == null)
             {
                 context.ErrorResult = new AuthenticationFailureResult("Invalid credentials", request);
+                return Task.CompletedTask;
             }
 
             string userName = userNameAndPassword.Item1;
@@ -65,6 +66,8 @@ namespace ListSearch.Filters
             {
                 context.ErrorResult = new AuthenticationFailureResult("Invalid username or password", request);
             }
+
+            return Task.CompletedTask;
         }
 
         /// <summary>
@@ -73,9 +76,9 @@ namespace ListSearch.Filters
         /// <param name="context">Http Authentication Challenge Context</param>
         /// <param name="cancellationToken">cancellation token</param>
         /// <returns><see cref="Task"/> that resolves to Challenge Async method</returns>
-        public async Task ChallengeAsync(HttpAuthenticationChallengeContext context, CancellationToken cancellationToken)
+        public Task ChallengeAsync(HttpAuthenticationChallengeContext context, CancellationToken cancellationToken)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         /// <summary>

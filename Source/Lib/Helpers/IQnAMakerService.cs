@@ -29,8 +29,8 @@ namespace Lib.Helpers
         /// <summary>
         /// Publishes KB.
         /// </summary>
-        /// <returns>Task that resolves to <see cref="QnAMakerResponse"/> which represents success or failure of API call.</returns>
-        Task<QnAMakerResponse> PublishKB();
+        /// <returns>Task that resolves to <see cref="bool"/> which represents success or failure of API call.</returns>
+        Task<bool> PublishKB();
 
         /// <summary>
         /// Creates KB using QnA Maker API.

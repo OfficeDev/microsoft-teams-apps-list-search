@@ -1,56 +1,35 @@
-﻿@model Lib.Models.GenerateAnswerResponse
+﻿@model List<Lib.Models.SelectedSearchResult>
 <div id="resultsText">
-    @if (Model != null && Model.Answers != null)
+    @if (Model != null && Model.Count != 0)
     {
-        bool count = (Model.Answers?.Count == 1 && Model.Answers[0].Answer == "No good match found in KB.");
-        if (!count)
+    <div class="resultItems">
+        @foreach (Lib.Models.SelectedSearchResult item in Model)
         {
-            <label>@Model.Answers.Count Result(s) Found</label>
-            <div style="height:40%; overflow-y:scroll">
-                @foreach (Lib.Models.QnAAnswer item in Model.Answers)
-                {
-                    <div class="searchResults" onclick='javascript: listItemClick(JSON.stringify(@item.Answer),"@item.Questions[0]")'>
-                        <label class="clickableLabel">@item.Questions[0]</label>
+            System.Text.StringBuilder sb = new System.Text.StringBuilder();
+            foreach (var answer in item.Answers)
+            {
+                sb.Append(answer.Answer + " | ");
+            }
+            sb.Remove(sb.Length - 3, 3);
+            var answers = Newtonsoft.Json.JsonConvert.SerializeObject(item.Answers);
+            <div class="resultItem" onclick='javascript: listItemClick(JSON.stringify(@answers),"@item.Question", "@item.Id")'>
+                <div class="searchResultsQuestionText">
+                    <span>@item.Question</span>
+                </div>
+                <div class="searchResultsAnswerText">
+                    <div class="searchResultsInnerDiv">
+                        <span class="searchResultsAnswersSpan">@sb.ToString()</span>
                     </div>
-                }
-
+                </div>
             </div>
         }
-        else
-        {
-            <label class="greyCustomColor centerAlignText">No Results Found</label>
-        }
+
+    </div>
     }
     else
     {
-        <label class="greyCustomColor centerAlignText">No Results Found</label>
+    <div class="resultsTextCentered">
+        <span class="searchResultsSpan">Sorry, no results found. Try another search term.</span>
+    </div>
     }
-    <button class="button backButton" onclick="goBack()">&lt; Back</button>
-
 </div>
-<script>
-    function listItemClick(answer, question) {
-        var token = '@ViewData["token"]';
-
-        var dataContract = {
-            answer: answer,
-            question: question,
-            token : token,
-        }
-        $.ajax({
-            type: "PUT",
-            url: "/search/SetClickedItem",
-            data: dataContract,
-            dataType: "json",
-            success: function() {
-                window.location.href = "/search/ResultCard?token=" + token;
-            },
-            error: function() {
-                window.location.href = "/Error/Error";
-            }
-        });
-    }
-    function goBack() {
-        window.history.back();
-    }
-</script>

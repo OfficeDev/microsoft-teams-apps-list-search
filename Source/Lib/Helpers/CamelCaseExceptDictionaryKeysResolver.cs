@@ -2,7 +2,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 // </copyright>
 
-namespace ListSearch.Helpers
+namespace Lib.Helpers
 {
     using System;
     using Newtonsoft.Json.Serialization;

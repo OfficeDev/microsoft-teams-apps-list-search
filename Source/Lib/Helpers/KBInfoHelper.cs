@@ -2,14 +2,12 @@
 // Copyright (c) Microsoft. All rights reserved.
 // </copyright>
 
-namespace ListSearch.Helpers
+namespace Lib.Helpers
 {
+    using System;
     using System.Collections.Generic;
-    using System.Configuration;
     using System.Threading.Tasks;
-    using System.Web.Http;
-    using ListSearch.Models;
-    using Microsoft.Azure;
+    using Lib.Models;
     using Microsoft.WindowsAzure.Storage;
     using Microsoft.WindowsAzure.Storage.Table;
 
@@ -29,9 +27,10 @@ namespace ListSearch.Helpers
         /// <summary>
         /// Initializes a new instance of the <see cref="KBInfoHelper"/> class.
         /// </summary>
-        public KBInfoHelper()
+        /// <param name="connectionString">connection string of storage.</param>
+        public KBInfoHelper(string connectionString)
         {
-            this.storageAccount = CloudStorageAccount.Parse(ConfigurationManager.AppSettings["StorageConnectionString"]);
+            this.storageAccount = CloudStorageAccount.Parse(connectionString);
             this.cloudTableClient = this.storageAccount.CreateCloudTableClient();
             this.cloudTable = this.cloudTableClient.GetTableReference(KbInfoConfigTableName);
         }
@@ -46,20 +45,6 @@ namespace ListSearch.Helpers
             TableOperation searchOperation = TableOperation.Retrieve<KBInfo>(PartitionKey, kbId);
             TableResult searchResult = await this.cloudTable.ExecuteAsync(searchOperation);
             return (KBInfo)searchResult.Result;
-        }
-
-        /// <summary>
-        /// Get answer fields from storage.
-        /// </summary>
-        /// <param name="kbId">Id of the KB for which Metadata fields are to be fetched.</param>
-        /// <returns><see cref="Task"/> that resolves to list of answer fields.</returns>
-        public async Task<List<string>> GetAnswerFields(string kbId)
-        {
-            TableOperation retrieveOperation = TableOperation.Retrieve<KBInfo>(PartitionKey, kbId);
-            TableResult retrievedResult = await this.cloudTable.ExecuteAsync(retrieveOperation);
-            KBInfo result = (KBInfo)retrievedResult.Result;
-            List<string> retObj = Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(result.AnswerFields);
-            return retObj;
         }
 
         /// <summary>
@@ -93,7 +78,7 @@ namespace ListSearch.Helpers
             TableResult insertOrMergeResult = await this.cloudTable.ExecuteAsync(insertOrMergeOperation);
             if (insertOrMergeResult.HttpStatusCode != this.insertSuccessResponseCode)
             {
-                throw new HttpResponseException((System.Net.HttpStatusCode)insertOrMergeResult.HttpStatusCode); // TODO: Handle Exception
+                throw new Exception($"HTTP Error code - {insertOrMergeResult.HttpStatusCode}"); // TODO: Handle Exception
             }
         }
     }

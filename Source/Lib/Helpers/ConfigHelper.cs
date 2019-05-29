@@ -2,11 +2,10 @@
 // Copyright (c) Microsoft. All rights reserved.
 // </copyright>
 
-namespace ListSearch.Helpers
+namespace Lib.Helpers
 {
-    using System.Configuration;
     using System.Threading.Tasks;
-    using ListSearch.Models;
+    using Lib.Models;
     using Microsoft.WindowsAzure.Storage;
     using Microsoft.WindowsAzure.Storage.Table;
 
@@ -22,9 +21,10 @@ namespace ListSearch.Helpers
         /// <summary>
         /// Initializes a new instance of the <see cref="ConfigHelper"/> class.
         /// </summary>
-        public ConfigHelper()
+        /// <param name="connectionString">connection string of storage.</param>
+        public ConfigHelper(string connectionString)
         {
-            this.storageAccount = CloudStorageAccount.Parse(ConfigurationManager.AppSettings["StorageConnectionString"]);
+            this.storageAccount = CloudStorageAccount.Parse(connectionString);
             this.cloudTableClient = this.storageAccount.CreateCloudTableClient();
         }
 

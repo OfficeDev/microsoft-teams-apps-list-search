@@ -1,0 +1,37 @@
+﻿@model Lib.Models.SelectedSearchResult
+@Styles.Render("~/Content/css")
+
+<script src="~/Scripts/jquery-3.3.1.min.js"></script>
+<script src="~/Scripts/bootstrap.min.js"></script>
+<script src="~/Scripts/MicrosoftTeams-1.4.1.min.js"></script>
+<div id="resultCardHeading" class="resultCardHeading" >
+    <span id="resultCardSpan" class="resultCardSpan"></span>
+</div>
+<div class="controlWidth horizonalLineHeight">
+    <hr class="horizonalLine" />
+</div>
+<div id="adaptiveCard">
+    <div id="selectedQuestion" class="selectedQuestion">
+        <span>@Model.Question</span>
+    </div>
+    <div id="adaptiveAnswers">
+        @{
+            var JsonSerializerSettings = new Newtonsoft.Json.JsonSerializerSettings()
+            {
+                ContractResolver = new Lib.Helpers.CamelCaseExceptDictionaryKeysResolver(),
+                Formatting = Newtonsoft.Json.Formatting.None,
+            };
+
+            var json = Newtonsoft.Json.JsonConvert.SerializeObject(Model, JsonSerializerSettings);
+        }
+        @foreach (Lib.Models.DeserializedAnswer answer in Model.Answers)
+        {
+            <div id="questionDiv" class="questionDiv"><span><b>@answer.Question:</b></span></div>
+            <div id="answerDiv" class="answerDiv"><span>@answer.Answer</span></div>
+        }
+    </div>
+    <div id="actionButtonsDivResultCard" class="controlWidth" style="top:436px; margin-bottom:32px;margin-top:32px; position:absolute">
+        <button id="btnShare" onclick='javascript: ShareCard(JSON.stringify(@(Json.Encode(Model))))' class="floatButtonsRight button-primary buttonDimensions">Share</button>
+        <button id="btnBack" onclick="back()" class="floatButtonsRight button-secondary buttonDimensions">Back</button>
+    </div>
+</div>

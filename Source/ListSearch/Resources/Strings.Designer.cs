@@ -88,7 +88,7 @@ namespace ListSearch.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to View More.
+        ///   Looks up a localized string similar to Open.
         /// </summary>
         internal static string ResultCardButtonTitle {
             get {

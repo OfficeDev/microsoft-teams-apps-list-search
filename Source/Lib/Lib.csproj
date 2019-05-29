@@ -30,10 +30,17 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <DocumentationFile>bin\Release\Lib.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.Azure.KeyVault.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Azure.KeyVault.Core.1.0.0\lib\net40\Microsoft.Azure.KeyVault.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.IdentityModel.Logging, Version=1.1.4.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.IdentityModel.Logging.1.1.4\lib\net451\Microsoft.IdentityModel.Logging.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.IdentityModel.Tokens, Version=5.1.4.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.IdentityModel.Tokens.5.1.4\lib\net451\Microsoft.IdentityModel.Tokens.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.WindowsAzure.Storage, Version=9.3.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\WindowsAzure.Storage.9.3.3\lib\net45\Microsoft.WindowsAzure.Storage.dll</HintPath>
@@ -43,6 +50,9 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.IdentityModel.Tokens.Jwt, Version=5.1.4.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.IdentityModel.Tokens.Jwt.5.1.4\lib\net451\System.IdentityModel.Tokens.Jwt.dll</HintPath>
+    </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -51,10 +61,19 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Helpers\BlobHelper.cs" />
+    <Compile Include="Helpers\CamelCaseExceptDictionaryKeysResolver.cs" />
+    <Compile Include="Helpers\ConfigHelper.cs" />
+    <Compile Include="Helpers\GraphHelper.cs" />
     <Compile Include="Helpers\IQnAMakerService.cs" />
+    <Compile Include="Helpers\JwtHelper.cs" />
+    <Compile Include="Helpers\KBInfoHelper.cs" />
     <Compile Include="Helpers\QnAMakerService.cs" />
+    <Compile Include="Helpers\TokenHelper.cs" />
     <Compile Include="Models\Add.cs" />
+    <Compile Include="Models\ColumnInfo.cs" />
     <Compile Include="Models\ColumnMapping.cs" />
+    <Compile Include="Models\ConfigEntity.cs" />
     <Compile Include="Models\CreateKBRequest.cs" />
     <Compile Include="Models\Delete.cs" />
     <Compile Include="Models\DeserializedAnswer.cs" />
@@ -64,19 +83,26 @@
     <Compile Include="Models\ExtractionOptions.cs" />
     <Compile Include="Models\File.cs" />
     <Compile Include="Models\GetKnowledgeBaseDetailsResponse.cs" />
+    <Compile Include="Models\JWTExceptions.cs" />
+    <Compile Include="Models\KBInfo.cs" />
     <Compile Include="Models\QnAMakerOperationStates.cs" />
     <Compile Include="Models\QnAMakerResponse.cs" />
+    <Compile Include="Models\RefreshTokenResponse.cs" />
     <Compile Include="Models\SelectedSearchResult.cs" />
     <Compile Include="Models\GenerateAnswerRequest.cs" />
     <Compile Include="Models\GenerateAnswerResponse.cs" />
     <Compile Include="Models\GetKnowledgeBaseResponse.cs" />
     <Compile Include="Models\KnowledgeBase.cs" />
     <Compile Include="Models\QnAAnswer.cs" />
+    <Compile Include="Models\StorageInfo.cs" />
+    <Compile Include="Models\TokenEntity.cs" />
+    <Compile Include="Models\TokenTypes.cs" />
     <Compile Include="Models\Update.cs" />
     <Compile Include="Models\UpdateKBRequest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="app.config" />
     <None Include="packages.config">
       <SubType>Designer</SubType>
     </None>

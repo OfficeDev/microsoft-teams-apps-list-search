@@ -1,39 +1,270 @@
-﻿@model System.Collections.Generic.List<ListSearch.Models.KBInfo>
+﻿@model System.Collections.Generic.List<Lib.Models.KBInfo>
 @{
     Layout = null;
 }
 @Styles.Render("~/Content/css")
+@Styles.Render("~/Content/bootstrap.min.css")
 <!DOCTYPE html>
-
 <html>
 <head>
     <meta name="viewport" content="width=device-width" />
     <title>Search</title>
+    <script src="~/Scripts/jquery-3.3.1.min.js"></script>
+    <script src="~/Scripts/bootstrap.min.js"></script>
     <script src="~/Scripts/MicrosoftTeams-1.4.1.min.js"></script>
     <script>
         microsoftTeams.initialize();
-        function listClick(kbId, kbName) {
-            var token = '@ViewData["token"]';
-            window.location.href = "/search/SearchList?kbId=" + kbId + "&kbName=" + kbName+"&token="+token;
-        }
     </script>
 </head>
-<body>
-    <div class="parentDiv">
-        <b>Select the data source you wish to search</b>
-        <label class="greyCustomColor">Select one.</label>
-        <div id="searchLists" class="searchDiv">
-            @if (Model != null)
-            {
-                foreach (var item in Model)
-                {
-                    <div onclick="listClick('@item.KBId', '@item.KBName')" style="cursor:pointer" class="column">
-                        <label class="clickableLabel"><img class="listImage" src="~/Images/ListImage.PNG" alt="Search list @item.KBName" /><span class="listText">@item.KBName</span></label>
-                    </div>
-                }
-            }
+<body class="controlWidth">
+    <div id="containerDiv" class="controlWidth">
+        <div class="inputsDiv">
+            <div id="databaseDiv" class="controlWidth select-wrapper">
+                <button role="combobox" id="searchDatabase" class="select dropdown-toggle" data-toggle="dropdown">
+                    <i aria-hidden="true" class="icon-base icon-arrowdown"></i>
+                    <span id="comboboxText" class="greyCustomColorSpan text-left">Select the database to search</span>
+                </button>
+                <ul class="select-items dropdown-menu">
+                    @foreach (var kb in Model)
+                    {
+                        <li class="select-item" id="@kb.KBId">@kb.KBName</li>
+                        <li id="hdn_@kb.KBId" style="display:none">@kb.QuestionFieldDisplayName</li>
+                    }
+                </ul>
+            </div>
+            <div id="searchKeywordDiv" class="controlWidth searchBarDiv">
+                <span id="searchKeyWordLabel" class="controlWidth marginZero labelOverwrite"></span>
+                <div><i aria-hidden="true" class="icon-base icon-search"></i></div>
+                <input id="inpSearchBox" placeholder="Search" class="controlWidth input-field inputSearchBox" />
+            </div>
+            <div id="searchResultsDiv" class="controlWidth searchResultsHeight">
+                <div id="emptyPlaceHolderSelectDatabase" class="controlWidth searchResults">
+                    <span class="searchResultsSpan">Select a database to get started</span>
+                </div>
+                <div id="emptyPlaceHolderSelectSearchTerm" class="controlWidth searchResults">
+                    <span class="searchResultsSpan">Enter search term</span>
+                </div>
+                <div id="loader" class="controlWidth loader">
+                </div>
+                <div id="resultsList" class="controlWidth">
+                </div>
+                <div id="resultsError" class="controlWidth">
+                    @Html.Partial("~/Views/Error/ErrorPartial.cshtml");
+                </div>
+            </div>
         </div>
-        <div style="float:right; padding-top:1em;"><button class="feedbackButton button">Send Feedback</button></div>
+        <div id="actionButtonsDiv" class="controlWidth">
+            <button id="btnShare" onclick="ShareCard()" class="floatButtonsRight button-primary buttonDimensions" disabled="disabled">Share</button>
+            <button id="btnBack" class="floatButtonsRight button-secondary buttonDimensions" disabled="disabled">Back</button>
+        </div>
     </div>
+    <script>
+        var database;
+        var searchTerm;
+
+        var typingTimer;
+        var doneTypingInterval = @System.Configuration.ConfigurationManager.AppSettings["SearchDelayInMilliseconds"]; //in milliseconds
+        var $input = $('#inpSearchBox');
+
+        var selectedKbId;
+        var kbName;
+
+        var searchTerm;
+
+        $(document).ready()
+        {
+            $("#emptyPlaceHolderSelectDatabase").show();
+            $("#emptyPlaceHolderSelectSearchTerm").hide();
+            $("#loader").hide();
+            $("#resultsList").hide();
+            $("#resultsError").hide();
+            $("#databaseDiv").show();
+            $("#searchKeywordDiv").show();
+            $("#btnShare").attr('disabled', 'disabled');
+        }
+
+
+        $(function () {
+            $(".select-item").on('click', function () {
+                $("#comboboxText").text($(this).text());
+                $("#comboboxText").removeClass("greyCustomColorSpan");
+                $("#comboboxText").addClass("blackCustomColorSpan");
+                $("#searchKeywordDiv").css('visibility', 'visible');
+
+                $("#emptyPlaceHolderSelectDatabase").hide();
+                $("#emptyPlaceHolderSelectSearchTerm").show();
+                $("#loader").hide();
+                $("#resultsList").hide();
+                $("#resultsError").hide();
+                $("#databaseDiv").show();
+                $("#searchKeywordDiv").show();
+                $("#btnShare").attr('disabled', 'disabled');
+
+
+                $("#inpSearchBox").val("");
+
+                selectedKbId = this.id;
+                var hiddenFieldId = "hdn_" + selectedKbId;
+                var question = $("#" + hiddenFieldId).text();
+                $("#searchKeyWordLabel").text("Search by " + question);
+
+
+                kbName = $(this).text();
+            });
+        });
+
+        $input.on('keyup', function () {
+            clearTimeout(typingTimer);
+            typingTimer = setTimeout(doneTyping, doneTypingInterval);
+        });
+        $input.on('keydown', function () {
+            clearTimeout(typingTimer);
+        });
+        $(document).ajaxSend(function () {
+            $("#emptyPlaceHolderSelectDatabase").hide();
+            $("#emptyPlaceHolderSelectSearchTerm").hide();
+            $("#loader").show();
+            $("#resultsList").hide();
+            $("#resultsError").hide();
+            $("#databaseDiv").show();
+            $("#searchKeywordDiv").show();
+            $("#btnShare").attr('disabled', 'disabled');
+
+        });
+        function doneTyping() {
+            var typedData = $input.val();
+            var token = '@ViewData["token"]';
+            $.ajax({
+                async: true,
+                type: "GET",
+                beforeSend: function (request) {
+                    request.setRequestHeader("Authorization", "bearer " + token);
+                },
+                url: '@Url.Action("SearchResults")',
+                data: { searchedKeyword: typedData, kbId: selectedKbId, kbName: kbName },
+                success: function (result) {
+                    if ($('#inpSearchBox').val() === typedData) {
+
+                        document.getElementById("resultsList").innerHTML = result;
+
+                        $("#emptyPlaceHolderSelectDatabase").hide();
+                        $("#emptyPlaceHolderSelectSearchTerm").hide();
+                        $("#loader").hide();
+                        $("#resultsList").show();
+                        $("#resultsError").hide();
+                        $("#databaseDiv").show();
+                        $("#searchKeywordDiv").show();
+                        $("#btnShare").attr('disabled', 'disabled');
+
+                    }
+                },
+                error: function () {
+                    if ($('#inpSearchBox').val() === typedData) {
+                        $("#emptyPlaceHolderSelectDatabase").hide();
+                        $("#emptyPlaceHolderSelectSearchTerm").hide();
+                        $("#loader").hide();
+                        $("#resultsList").hide();
+                        $("#resultsError").show();
+                        $("#databaseDiv").show();
+                        $("#searchKeywordDiv").show();
+                        $("#btnShare").attr('disabled', 'disabled');
+
+                    }
+                }
+            });
+        }
+        $(document).ready(function () {
+            if ($('#inpSearchBox').length > 0 && $('#inpSearchBox').val() != "") {
+                doneTyping();
+            }
+        });
+
+        function listItemClick(answer, question, id) {
+            database = $("#comboboxText").text();
+            searchTerm = $("#inpSearchBox").val();
+
+            var token = '@ViewData["token"]';
+            var typedData = $input.val();
+            var dataContract = {
+                answer: answer,
+                question: question,
+                id: id,
+                token: token,
+            }
+            $.ajax({
+                async:true,
+                type: "PUT",
+                url: "/search/SetClickedItem",
+                data: dataContract,
+                dataType: "json",
+                success: function () {
+                    $.ajax({
+                        async: true,
+                        type: "GET",
+                        beforeSend: function (request) {
+                            request.setRequestHeader("Authorization", "bearer " + token);
+                        },
+                        url: '@Url.Action("ResultCardPartial")',
+                        data: { kbId: selectedKbId, kbName: kbName },
+                        success: function (result) {
+                            if ($('#inpSearchBox').val() === typedData) {
+                                document.getElementById("resultsList").innerHTML = result;
+
+                                $("#resultCardSpan").html("Searching <span style='font-weight:700'>" + $input.val() + "</span> in <span style='font-weight:700'>" + kbName + "</span>");
+
+                                $("#emptyPlaceHolderSelectDatabase").hide();
+                                $("#emptyPlaceHolderSelectSearchTerm").hide();
+                                $("#loader").hide();
+                                $("#resultsList").show();
+                                $("#resultsError").hide();
+                                $("#databaseDiv").hide();
+                                $("#searchKeywordDiv").hide();
+                                $("#actionButtonsDiv").hide();
+                            }
+                        },
+                        error: function () {
+                            if ($('#inpSearchBox').val() === typedData) {
+                                $("#emptyPlaceHolderSelectDatabase").hide();
+                                $("#emptyPlaceHolderSelectSearchTerm").hide();
+                                $("#loader").hide();
+                                $("#resultsList").hide();
+                                $("#resultsError").show();
+                                $("#databaseDiv").hide();
+                                $("#searchKeywordDiv").hide();
+                                $("#btnShare").attr('disabled', 'disabled');
+                            }
+                        }
+                    });
+                },
+                error: function () {
+                    $("#emptyPlaceHolderSelectDatabase").hide();
+                    $("#emptyPlaceHolderSelectSearchTerm").hide();
+                    $("#loader").hide();
+                    $("#resultsList").hide();
+                    $("#resultsError").show();
+                    $("#databaseDiv").show();
+                    $("#searchKeywordDiv").show();
+                    $("#btnShare").attr('disabled', 'disabled');
+                }
+            });
+        }
+        function back() {
+            $("#emptyPlaceHolderSelectDatabase").hide();
+            $("#emptyPlaceHolderSelectSearchTerm").hide();
+            $("#loader").show();
+            $("#resultsList").hide();
+            $("#resultsError").hide();
+            $("#databaseDiv").show();
+            $("#searchKeywordDiv").show();
+            $("#btnShare").attr('disabled', 'disabled');
+            $("#actionButtonsDiv").show();
+            doneTyping();
+        }
+
+    function ShareCard(card) {
+        microsoftTeams.initialize();
+        microsoftTeams.tasks.submitTask(card);
+    }
+    </script>
 </body>
 </html>
