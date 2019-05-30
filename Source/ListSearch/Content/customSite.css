@@ -2,43 +2,39 @@
     font-family: MSTeamsIcons-Light;
     font-style: normal;
     font-weight: normal;
-    src: url('../fonts/TeamsAssets-Light.ttf');
-    src: url('TeamsAssets-Light.eot?#iefix') format('embedded-opentype'), url('../fonts/TeamsAssets-Light.ttf') format('truetype'), url('TeamsAssets-Light.woff2') format('woff2'), url('TeamsAssets-Light.woff') format('woff'), url('TeamsAssets-Light.svg#MSTeamsIcons-Light') format('svg')
+    src: url('/lib/msteams-ui-icons-core/fonts/TeamsAssets-Light.ttf');
+    src: url('/lib/msteams-ui-icons-core/fonts/TeamsAssets-Light.eot?#iefix') format('embedded-opentype'), url('/lib/msteams-ui-icons-core/fonts/TeamsAssets-Light.ttf') format('truetype'), url('/lib/msteams-ui-icons-core/fonts/TeamsAssets-Light.woff2') format('woff2'), url('/lib/msteams-ui-icons-core/fonts/TeamsAssets-Light.woff') format('woff'), url('/lib/msteams-ui-icons-core/fonts/TeamsAssets-Light.svg#MSTeamsIcons-Light') format('svg')
 }
 
-span
-{
-    font-family:'Segoe UI' !important;
+span {
+    font-family: 'Segoe UI', Tahoma, Helvetica, sans-serif;
+}
+
+html {
+    height: 100%;
+    font-family: 'Segoe UI', Tahoma, Helvetica, sans-serif;
 }
 
 body {
-    width: 536px;
-    height: 500px;
-    font-family: 'Segoe UI';
-    margin-top: 32px !important;
-    margin-left: 32px !important;
-    margin-right: 32px !important;
-    padding-bottom: 32px;
-    font-family:'Segoe UI'
+    width: 100%;
+    height: 100%;
+    padding: 32px;
+    box-sizing: border-box;
 }
 
-body::-webkit-scrollbar {
-    width: 8px;
-    height:8px;
-    background-color: transparent;
-}
+    body::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+        background-color: transparent;
+    }
 
-body::-webkit-scrollbar-thumb {
-    background-color: #BDBDBD;
-}
+    body::-webkit-scrollbar-thumb {
+        background-color: #BDBDBD;
+    }
 
-body::-webkit-scrollbar-thumb {
-    border-radius: 5px;
-}
-
-.controlWidth {
-    width: 536px;
-}
+    body::-webkit-scrollbar-thumb {
+        border-radius: 5px;
+    }
 
 .marginZero {
     margin: 0;
@@ -47,7 +43,7 @@ body::-webkit-scrollbar-thumb {
 .floatButtonsRight {
     margin-left: 8px;
     float: right;
-    font-family:'Segoe UI' !important;
+    font-family: 'Segoe UI' !important;
 }
 
 .select {
@@ -86,6 +82,7 @@ body::-webkit-scrollbar-thumb {
     .select-item:hover {
         background-color: #f3f2f1;
     }
+
 .select-items::-webkit-scrollbar {
     width: 7px;
     background-color: transparent;
@@ -164,8 +161,9 @@ body::-webkit-scrollbar-thumb {
     margin-bottom: 24px;
     visibility: hidden;
 }
-.actionButtonsDiv{
-    height:32px;
+
+.actionButtonsDiv {
+    height: 32px;
     font-family: 'Segoe UI' !important;
 }
 
@@ -209,18 +207,20 @@ body::-webkit-scrollbar-thumb {
     margin-bottom: 24px;
 }
 
-.btnBack{
-    background:none;
-    border:none;
-    font-size:12px;
-    padding-left:0px;
+.btnBack {
+    background: none;
+    border: none;
+    font-size: 12px;
+    padding-left: 0px;
 }
+
 .btnBackSpan {
     font-family: 'Segoe UI';
     font-size: 12px;
     opacity: 1;
     color: rgba(37, 36, 36, 0.75);
 }
+
 .icon-backButton::before {
     content: "\e44c";
     position: relative;
@@ -234,11 +234,11 @@ body::-webkit-scrollbar-thumb {
     font-size: 14px;
 }
 
-.resultCardSpan{
+.resultCardSpan {
     color: rgba(37, 36, 36, 0.75);
     opacity: 1;
-    font-family:'Segoe UI';
-    font-size:14px;
+    font-family: 'Segoe UI';
+    font-size: 14px;
 }
 
 .searchResultsAnswerText {
@@ -253,14 +253,14 @@ body::-webkit-scrollbar-thumb {
     text-overflow: clip;
 }
 
-.horizonalLineHeight{
-    height:8px;
-    margin:12px 0 12px 0;
+.horizonalLineHeight {
+    height: 8px;
+    margin: 12px 0 12px 0;
 }
 
-.horizonalLine{
-    fill:rgba(37, 36, 36, 0.05);
-    height:1px;
+.horizonalLine {
+    fill: rgba(37, 36, 36, 0.05);
+    height: 1px;
     margin: 0;
 }
 
@@ -287,7 +287,7 @@ body::-webkit-scrollbar-thumb {
     padding-top: 9px;
     padding-bottom: 12px;
     padding-left: 16px;
-    padding-right:16px;
+    padding-right: 16px;
 }
 
     .resultItem:hover {
@@ -332,8 +332,8 @@ body::-webkit-scrollbar-thumb {
     width: 74%;
     opacity: 1;
     color: rgba(37,36,36,1);
-    font-family:'Segoe UI';
-    font-size:14px;
+    font-family: 'Segoe UI';
+    font-size: 14px;
 }
 
 .questionDiv {
@@ -341,14 +341,14 @@ body::-webkit-scrollbar-thumb {
     width: 25%;
     opacity: 1;
     color: rgba(37,36,36,1);
-    font-family:'Segoe UI';
-    font-weight:600;
-    font-size:14px;
+    font-family: 'Segoe UI';
+    font-weight: 600;
+    font-size: 14px;
 }
 
 .errorDiv {
     line-height: 500px;
-    text-align:center;
+    text-align: center;
 }
 
 .loader {

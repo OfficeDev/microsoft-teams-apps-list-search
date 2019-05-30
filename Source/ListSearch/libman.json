@@ -1,0 +1,83 @@
+{
+  "version": "1.0",
+  "defaultProvider": "cdnjs",
+  "libraries": [
+    {
+      "provider": "cdnjs",
+      "library": "jquery@3.4.1",
+      "destination": "lib/jquery/",
+      "files": [
+        "jquery.min.js",
+        "jquery.js"
+      ]
+    },
+    {
+      "provider": "cdnjs",
+      "library": "modernizr@2.8.3",
+      "destination": "lib/modernizr/",
+      "files": [
+        "modernizr.min.js",
+        "modernizr.js"
+      ]
+    },
+    {
+      "provider": "unpkg",
+      "library": "bootstrap@3.4.1",
+      "destination": "lib/bootstrap/",
+      "files": [
+        "dist/css/bootstrap-theme.css",
+        "dist/css/bootstrap-theme.css.map",
+        "dist/css/bootstrap-theme.min.css",
+        "dist/css/bootstrap-theme.min.css.map",
+        "dist/css/bootstrap.css",
+        "dist/css/bootstrap.css.map",
+        "dist/css/bootstrap.min.css",
+        "dist/css/bootstrap.min.css.map",
+        "dist/fonts/glyphicons-halflings-regular.eot",
+        "dist/fonts/glyphicons-halflings-regular.svg",
+        "dist/fonts/glyphicons-halflings-regular.ttf",
+        "dist/fonts/glyphicons-halflings-regular.woff",
+        "dist/fonts/glyphicons-halflings-regular.woff2",
+        "dist/js/bootstrap.js",
+        "dist/js/bootstrap.min.js"
+      ]
+    },
+    {
+      "provider": "unpkg",
+      "library": "@microsoft/teams-js@1.4.1",
+      "destination": "lib/microsoft-teams/",
+      "files": [
+        "dist/MicrosoftTeams.min.js",
+        "dist/MicrosoftTeams.js",
+        "dist/MicrosoftTeams.js.map"
+      ]
+    },
+    {
+      "provider": "unpkg",
+      "library": "msteams-ui-styles-core@0.8.1",
+      "destination": "lib/msteams-ui-styles-core/",
+      "files": [
+        "css/msteams-10.css",
+        "css/msteams-14.css",
+        "css/msteams-16.css"
+      ]
+    },
+    {
+      "provider": "unpkg",
+      "library": "msteams-ui-icons-core@0.4.1",
+      "destination": "lib/msteams-ui-icons-core/",
+      "files": [
+        "fonts/TeamsAssets-Light.eot",
+        "fonts/TeamsAssets-Light.svg",
+        "fonts/TeamsAssets-Light.ttf",
+        "fonts/TeamsAssets-Light.woff",
+        "fonts/TeamsAssets-Light.woff2",
+        "fonts/TeamsAssets-Regular.eot",
+        "fonts/TeamsAssets-Regular.svg",
+        "fonts/TeamsAssets-Regular.ttf",
+        "fonts/TeamsAssets-Regular.woff",
+        "fonts/TeamsAssets-Regular.woff2"
+      ]
+    }
+  ]
+}

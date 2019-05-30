@@ -19,21 +19,22 @@ namespace ListSearch
         public static void RegisterBundles(BundleCollection bundles)
         {
             bundles.Add(new ScriptBundle("~/bundles/jquery").Include(
-                        "~/Scripts/jquery-{version}.js"));
-
-            bundles.Add(new ScriptBundle("~/bundles/jqueryval").Include(
-                        "~/Scripts/jquery.validate*"));
+                        "~/lib/jquery/jquery.min.js"));
 
             // Use the development version of Modernizr to develop with and learn from. Then, when you're
             // ready for production, use the build tool at https://modernizr.com to pick only the tests you need.
             bundles.Add(new ScriptBundle("~/bundles/modernizr").Include(
-                        "~/Scripts/modernizr-*"));
+                        "~/lib/modernizr/modernizr.min.js"));
 
             bundles.Add(new ScriptBundle("~/bundles/bootstrap").Include(
-                      "~/Scripts/bootstrap.js"));
+                      "~/lib/bootstrap/dist/js/bootstrap.min.js"));
+
+            bundles.Add(new ScriptBundle("~/bundles/msteams").Include(
+                      "~/lib/microsoft-teams/dist/MicrosoftTeams.min.js"));
 
             bundles.Add(new StyleBundle("~/Content/css").Include(
-                "~/Content/msteams-ui-styles-core.css",
+                "~/lib/bootstrap/dist/css/bootstrap.min.css",
+                "~/lib/msteams-ui-styles-core/css/msteams-10.css",
                 "~/Content/customSite.css"));
         }
     }

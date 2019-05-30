@@ -1,0 +1,7 @@
+# Paths with files restored by libman
+lib/bootstrap/
+lib/jquery/
+lib/modernizr/
+lib/microsoft-teams/
+lib/msteams-ui-styles-core/
+lib/msteams-ui-icons-core/

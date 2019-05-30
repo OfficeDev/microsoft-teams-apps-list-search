@@ -2,21 +2,18 @@
 @{
     Layout = null;
 }
-@Styles.Render("~/Content/css")
-@Styles.Render("~/Content/bootstrap.min.css")
 <!DOCTYPE html>
 <html>
 <head>
     <meta name="viewport" content="width=device-width" />
     <title>Search</title>
-    <script src="~/Scripts/jquery-3.3.1.min.js"></script>
-    <script src="~/Scripts/bootstrap.min.js"></script>
-    <script src="~/Scripts/MicrosoftTeams-1.4.1.min.js"></script>
-    <script>
-        microsoftTeams.initialize();
-    </script>
+
+    @Styles.Render("~/Content/css")
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/bootstrap")
+    @Scripts.Render("~/bundles/msteams")
 </head>
-<body class="controlWidth">
+<body class="theme-light">
     <div id="containerDiv" class="controlWidth">
         <div class="inputsDiv">
             <div id="databaseDiv" class="controlWidth select-wrapper">
@@ -58,6 +55,10 @@
             <button id="btnBack" class="floatButtonsRight button-secondary buttonDimensions" disabled="disabled">Back</button>
         </div>
     </div>
+
+    <script>
+        microsoftTeams.initialize();
+    </script>
     <script>
         var database;
         var searchTerm;
