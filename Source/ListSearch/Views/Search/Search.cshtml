@@ -41,12 +41,16 @@
                 <div id="emptyPlaceHolderSelectSearchTerm" class="controlWidth searchResults">
                     <span class="searchResultsSpan">Enter search term</span>
                 </div>
-                <div id="loader" class="controlWidth loader">
+
+                <div id="loader">
+                    @Html.Partial("~/Views/Shared/_Spinner.cshtml")
                 </div>
+
                 <div id="resultsList" class="controlWidth">
                 </div>
+
                 <div id="resultsError" class="controlWidth">
-                    @Html.Partial("~/Views/Error/ErrorPartial.cshtml");
+                    @Html.Partial("~/Views/Error/ErrorPartial.cshtml")
                 </div>
             </div>
         </div>

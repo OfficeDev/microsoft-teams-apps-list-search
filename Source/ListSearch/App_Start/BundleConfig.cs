@@ -35,6 +35,7 @@ namespace ListSearch
             bundles.Add(new StyleBundle("~/Content/css").Include(
                 "~/lib/bootstrap/dist/css/bootstrap.min.css",
                 "~/lib/msteams-ui-styles-core/css/msteams-10.css",
+                "~/Content/spinner.css",
                 "~/Content/customSite.css"));
         }
     }

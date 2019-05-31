@@ -1,0 +1,103 @@
+﻿@-webkit-keyframes translate-small {
+    to {
+        -webkit-transform: translate3d(0, -144rem, 0);
+        transform: translate3d(0, -144rem, 0);
+    }
+}
+
+@keyframes translate-small {
+    to {
+        -webkit-transform: translate3d(0, -144rem, 0);
+        transform: translate3d(0, -144rem, 0);
+    }
+}
+
+@-webkit-keyframes translate-medium {
+    to {
+        -webkit-transform: translate3d(0, -216rem, 0);
+        transform: translate3d(0, -216rem, 0);
+    }
+}
+
+@keyframes translate-medium {
+    to {
+        -webkit-transform: translate3d(0, -216rem, 0);
+        transform: translate3d(0, -216rem, 0);
+    }
+}
+
+@-webkit-keyframes translate-large {
+    to {
+        -webkit-transform: translate3d(0, -432rem, 0);
+        transform: translate3d(0, -432rem, 0);
+    }
+}
+
+@keyframes translate-large {
+    to {
+        -webkit-transform: translate3d(0, -432rem, 0);
+        transform: translate3d(0, -432rem, 0);
+    }
+}
+
+@-webkit-keyframes fade-spinner-in {
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes fade-spinner-in {
+    to {
+        opacity: 1;
+    }
+}
+
+busy-animation {
+    display: inline-block;
+}
+
+.ts-spinner-internal {
+    overflow: hidden;
+}
+
+    .ts-spinner-internal.size-1x {
+        height: 2.4rem;
+        width: 2.4rem;
+    }
+
+        .ts-spinner-internal.size-1x .spinner-animate {
+            width: 2.4rem;
+            height: 146.4rem;
+            -webkit-animation: 2s steps(60) both infinite translate-small;
+            animation: 2s steps(60) both infinite translate-small;
+        }
+
+    .ts-spinner-internal.size-2x {
+        height: 3.6rem;
+        width: 3.6rem;
+        margin: auto;
+    }
+
+        .ts-spinner-internal.size-2x .spinner-animate {
+            width: 3.6rem;
+            height: 219.6rem;
+            -webkit-animation: 2s steps(60) both infinite translate-medium;
+            animation: 2s steps(60) both infinite translate-medium;
+        }
+
+    .ts-spinner-internal.size-3x {
+        height: 7.2rem;
+        width: 7.2rem;
+    }
+
+        .ts-spinner-internal.size-3x .spinner-animate {
+            width: 7.2rem;
+            height: 439.2rem;
+            -webkit-animation: 2s steps(60) both infinite translate-large;
+            animation: 2s steps(60) both infinite translate-large;
+        }
+
+.ts-spinner-container {
+    overflow: hidden;
+    position: relative;
+}
