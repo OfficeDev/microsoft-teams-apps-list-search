@@ -36,7 +36,7 @@ namespace ListSearch
                 "~/lib/bootstrap/dist/css/bootstrap.min.css",
                 "~/lib/msteams-ui-styles-core/css/msteams-10.css",
                 "~/Content/spinner.css",
-                "~/Content/customSite.css"));
+                "~/Content/customTeamsStyle.css"));
         }
     }
 }

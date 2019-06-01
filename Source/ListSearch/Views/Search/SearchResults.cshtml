@@ -1,8 +1,8 @@
 ﻿@model List<Lib.Models.SelectedSearchResult>
-<div id="resultsText">
-    @if (Model != null && Model.Count != 0)
-    {
-    <div class="resultItems">
+
+@if (Model != null && Model.Count != 0)
+{
+    <div>
         @foreach (Lib.Models.SelectedSearchResult item in Model)
         {
             System.Text.StringBuilder sb = new System.Text.StringBuilder();
@@ -13,23 +13,15 @@
             sb.Remove(sb.Length - 3, 3);
             var answers = Newtonsoft.Json.JsonConvert.SerializeObject(item.Answers);
             <div class="resultItem" onclick='javascript: listItemClick(JSON.stringify(@answers),"@item.Question", "@item.Id")'>
-                <div class="searchResultsQuestionText">
-                    <span>@item.Question</span>
-                </div>
-                <div class="searchResultsAnswerText">
-                    <div class="searchResultsInnerDiv">
-                        <span class="searchResultsAnswersSpan">@sb.ToString()</span>
-                    </div>
-                </div>
+                <div class="searchResultsQuestionText">@item.Question</div>
+                <div class="searchResultsAnswerText">@sb.ToString()</div>
             </div>
         }
-
     </div>
-    }
-    else
-    {
+}
+else
+{
     <div class="resultsTextCentered">
-        <span class="searchResultsSpan">Sorry, no results found. Try another search term.</span>
+        <span class="noResultsMessage">Sorry, no results found. Try another search term.</span>
     </div>
-    }
-</div>
+}

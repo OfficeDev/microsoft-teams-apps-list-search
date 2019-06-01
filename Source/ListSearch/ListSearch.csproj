@@ -221,7 +221,7 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Content\customSite.css" />
+    <Content Include="Content\customTeamsStyle.css" />
     <Content Include="Content\spinner.css" />
     <Content Include="Global.asax" />
     <Content Include="lib\bootstrap\dist\css\bootstrap-theme.css" />

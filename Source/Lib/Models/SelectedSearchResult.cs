@@ -12,12 +12,6 @@ namespace Lib.Models
     public class SelectedSearchResult
     {
         /// <summary>
-        /// Gets or sets Kb name
-        /// </summary>
-        [JsonProperty("kbName")]
-        public string KBName { get; set; }
-
-        /// <summary>
         /// Gets or sets Kb id
         /// </summary>
         [JsonProperty("kbId")]

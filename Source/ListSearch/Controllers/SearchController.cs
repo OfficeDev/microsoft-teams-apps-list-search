@@ -66,11 +66,10 @@ namespace ListSearch.Controllers
         /// </summary>
         /// <param name="searchedKeyword">Keyword searched by the user.</param>
         /// <param name="kbId">kb Id.</param>
-        /// <param name="kbName">kb Name.</param>
         /// <returns>Task that resolves to <see cref="PartialViewResult"/> representing Search Results partial view.</returns>
         [HandleError]
         [JwtExceptionFilter]
-        public async Task<PartialViewResult> SearchResults(string searchedKeyword, string kbId, string kbName)
+        public async Task<PartialViewResult> SearchResults(string searchedKeyword, string kbId)
         {
             var token = string.Empty;
             var authHeader = this.Request.Headers["Authorization"];
@@ -114,7 +113,6 @@ namespace ListSearch.Controllers
                         selectedSearchResults.Add(new SelectedSearchResult()
                         {
                             KBId = kbId,
-                            KBName = kbName,
                             Question = item.Questions[0],
                             Answers = answers,
                             Id = answerObj["id"].ToString(),
@@ -130,11 +128,10 @@ namespace ListSearch.Controllers
         /// Result Card Partial View
         /// </summary>
         /// <param name="kbId">kd id</param>
-        /// <param name="kbName">kb name</param>
         /// <returns><see cref="PartialViewResult"/> representing Result card partial view.</returns>
         [HandleError]
         [JwtExceptionFilter]
-        public PartialViewResult ResultCardPartial(string kbId, string kbName)
+        public PartialViewResult ResultCardPartial(string kbId)
         {
             var token = string.Empty;
             var authHeader = this.Request.Headers["Authorization"];
@@ -155,7 +152,6 @@ namespace ListSearch.Controllers
 
             SelectedSearchResult selectedSearchResult = new SelectedSearchResult()
             {
-                KBName = kbName,
                 KBId = kbId,
                 Question = selectedQuestion,
                 Answers = answers,
@@ -174,6 +170,7 @@ namespace ListSearch.Controllers
         /// <param name="id">id of selected item</param>
         /// <param name="token">jwt auth token.</param>
         /// <returns><see cref="JsonResult"/> denoting success</returns>
+        [HttpPost]
         [HttpPut]
         [HandleError]
         [JwtExceptionFilter]
