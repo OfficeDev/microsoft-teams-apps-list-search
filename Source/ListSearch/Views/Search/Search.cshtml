@@ -68,25 +68,6 @@
         var currentSearchText;      // Current search text
 
         $(function () {
-            // Attach click handlers to combobox items
-            $(".select-item").on('click', function () {
-                selectedKbId = this.id;
-
-                let kbName = $(this).text();
-                $("#comboboxText").text(kbName);
-                $("#comboboxText").removeClass("placeholder-text");
-                $("#searchListName").text(kbName);
-
-                var question = $(this).attr("data-question-display-name");
-                $("#searchFieldDisplayName").text(question);
-                $input.val("");
-                $("#searchKeywordDiv").show();
-
-                $("#loader").hide();
-                $("#resultsList").hide();
-                $("#resultsError").hide();
-            });
-
             // Save input box and attach handlers
             $input = $('#inpSearchBox');
             $input.on('keyup', function () {
@@ -100,6 +81,17 @@
             if ($input.length > 0 && $input.val() != "") {
                 doneTyping();
             }
+
+            let kbListItems = $(".select-item");
+            if (kbListItems.length === 1) {
+                // If there's only 1 item, select it immediately
+                selectKnowledgeBase(kbListItems[0]);
+            } else {
+                // Attach click handlers to combobox items
+                kbListItems.on("click", function (event) {
+                    selectKnowledgeBase(event.target);
+                });
+            }
         });
 
         // Show loading indicator on all AJAX calls
@@ -108,6 +100,26 @@
             $("#resultsList").hide();
             $("#resultsError").hide();
         });
+
+        // Select knowledge base
+        function selectKnowledgeBase(listItemElement) {
+            let element = $(listItemElement);
+            selectedKbId = element.attr("id");
+
+            let kbName = element.text();
+            $("#comboboxText").text(kbName);
+            $("#comboboxText").removeClass("placeholder-text");
+            $("#searchListName").text(kbName);
+
+            var question = element.attr("data-question-display-name");
+            $("#searchFieldDisplayName").text(question);
+            $input.val("");
+            $("#searchKeywordDiv").show();
+
+            $("#loader").hide();
+            $("#resultsList").hide();
+            $("#resultsError").hide();
+        }
 
         // Check if the input has changed
         function isSearchTextChanged(text) {
