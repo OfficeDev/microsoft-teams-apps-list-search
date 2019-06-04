@@ -48,7 +48,7 @@ namespace Lib.Helpers
         public async Task<string> GetListContents(HttpClient httpClient, string refreshToken, string listId, string fieldsToFetch, string sharePointSiteId, string connectionString, string tenantId, string encryptionDecryptionKey, string odataNextUrl = null)
         {
             TokenHelper tokenHelper = new TokenHelper(httpClient, connectionString, tenantId, this.clientId, this.clientSecret, encryptionDecryptionKey);
-            var accessToken = await tokenHelper.GetAccessTokenAsync(Scope, refreshToken, TokenTypes.GraphTokenType);
+            var accessToken = await tokenHelper.GetAccessTokenAsync(TokenTypes.GraphTokenType);
             string uri;
             if (string.IsNullOrEmpty(odataNextUrl))
             {
