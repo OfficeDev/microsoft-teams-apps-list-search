@@ -30,8 +30,7 @@ namespace ConfigApp.App_Start
 
             builder.RegisterType<HomeController>().InstancePerRequest();
 
-            var container = builder.Build();
-            DependencyResolver.SetResolver(new AutofacDependencyResolver(container));
+            DependencyResolver.SetResolver(new AutofacDependencyResolver(builder.Build()));
         }
     }
 }

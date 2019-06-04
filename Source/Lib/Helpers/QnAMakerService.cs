@@ -96,6 +96,7 @@ namespace Lib.Helpers
 
                 var response = await this.httpClient.SendAsync(httpRequest);
                 response.EnsureSuccessStatusCode();
+
                 return JsonConvert.DeserializeObject<GenerateAnswerResponse>(await response.Content.ReadAsStringAsync());
             }
         }
@@ -111,6 +112,7 @@ namespace Lib.Helpers
 
                 var response = await this.httpClient.SendAsync(httpRequest);
                 response.EnsureSuccessStatusCode();
+
                 return JsonConvert.DeserializeObject<QnAMakerResponse>(await response.Content.ReadAsStringAsync());
             }
         }
@@ -125,6 +127,7 @@ namespace Lib.Helpers
 
                 var response = await this.httpClient.SendAsync(httpRequest);
                 response.EnsureSuccessStatusCode();
+
                 return true;
             }
         }
@@ -140,6 +143,7 @@ namespace Lib.Helpers
 
                 HttpResponseMessage response = await this.httpClient.SendAsync(httpRequest);
                 response.EnsureSuccessStatusCode();
+
                 return JsonConvert.DeserializeObject<QnAMakerResponse>(await response.Content.ReadAsStringAsync());
             }
         }
@@ -154,6 +158,7 @@ namespace Lib.Helpers
 
                 var response = await this.httpClient.SendAsync(httpRequest);
                 response.EnsureSuccessStatusCode();
+
                 return true;
             }
         }
@@ -168,6 +173,7 @@ namespace Lib.Helpers
 
                 var response = await this.httpClient.SendAsync(httpRequest);
                 response.EnsureSuccessStatusCode();
+
                 return JsonConvert.DeserializeObject<QnAMakerResponse>(await response.Content.ReadAsStringAsync());
             }
         }
@@ -182,6 +188,7 @@ namespace Lib.Helpers
 
                 var response = await this.httpClient.SendAsync(httpRequest);
                 response.EnsureSuccessStatusCode();
+
                 return JsonConvert.DeserializeObject<GetKnowledgeBaseDetailsResponse>(await response.Content.ReadAsStringAsync());
             }
         }
@@ -260,9 +267,9 @@ namespace Lib.Helpers
         {
             if (string.IsNullOrEmpty(this.endpointKey))
             {
-                string endPointKeyUrl = $"{QnAMakerRequestUrl}/endpointkeys";
+                string endpointKeyUrl = $"{QnAMakerRequestUrl}/endpointkeys";
 
-                using (HttpRequestMessage httpRequest = new HttpRequestMessage(HttpMethod.Get, endPointKeyUrl))
+                using (HttpRequestMessage httpRequest = new HttpRequestMessage(HttpMethod.Get, endpointKeyUrl))
                 {
                     httpRequest.Headers.Add(Constants.OcpApimSubscriptionKey, this.subscriptionKey);
 
