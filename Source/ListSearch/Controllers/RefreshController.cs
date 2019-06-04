@@ -25,6 +25,9 @@ namespace ListSearch.Controllers
         private const string JsonFileExtension = ".json";
         private readonly HttpClient httpClient;
         private readonly string subscriptionKey;
+        private readonly string connectionString;
+        private readonly BlobHelper blobHelper;
+        private readonly KBInfoHelper kbInfoHelper;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RefreshController"/> class.
@@ -34,6 +37,10 @@ namespace ListSearch.Controllers
         {
             this.httpClient = httpClient ?? throw new System.ArgumentNullException(nameof(httpClient));
             this.subscriptionKey = ConfigurationManager.AppSettings["Ocp-Apim-Subscription-Key"];
+
+            this.connectionString = ConfigurationManager.AppSettings["StorageConnectionString"];
+            this.blobHelper = new BlobHelper(this.connectionString);
+            this.kbInfoHelper = new KBInfoHelper(this.connectionString);
         }
 
         /// <summary>
@@ -52,9 +59,7 @@ namespace ListSearch.Controllers
         [RefreshAuthFilter]
         public async Task RefreshAllKBs()
         {
-            string connectionString = ConfigurationManager.AppSettings["StorageConnectionString"];
-            KBInfoHelper kBInfoHelper = new KBInfoHelper(connectionString);
-            List<KBInfo> kbList = await kBInfoHelper.GetAllKBs(
+            List<KBInfo> kbList = await this.kbInfoHelper.GetAllKBs(
                 fields: new string[]
                 {
                     nameof(KBInfo.LastRefreshDateTime),
@@ -64,8 +69,6 @@ namespace ListSearch.Controllers
                     nameof(KBInfo.AnswerFields),
                     nameof(KBInfo.SharePointSiteId),
                 });
-
-            BlobHelper blobHelper = new BlobHelper(connectionString);
 
             foreach (var kb in kbList)
             {
@@ -80,29 +83,7 @@ namespace ListSearch.Controllers
                 {
                     try
                     {
-                        Dictionary<string, Uri> blobInfoTemp = new Dictionary<string, Uri>();
-                        GetListContentsResponse listContents = new GetListContentsResponse();
-
-                        do
-                        {
-                            ColumnInfo questionColumn = JsonConvert.DeserializeObject<ColumnInfo>(kb.QuestionField);
-                            string blobName = Guid.NewGuid().ToString() + JsonFileExtension;
-                            listContents = await this.GetListContents(kb.SharePointListId, kb.AnswerFields, questionColumn.Name, kb.SharePointSiteId, connectionString, listContents.ODataNextLink ?? null);
-                            string blobUrl = await blobHelper.UploadBlobAsync(JsonConvert.SerializeObject(listContents), blobName);
-                            blobInfoTemp.Add(blobName, new Uri(blobUrl));
-                        }
-                        while (!string.IsNullOrEmpty(listContents.ODataNextLink));
-
-                        await this.RefreshKB(kb.KBId, blobInfoTemp, JsonConvert.DeserializeObject<ColumnInfo>(kb.QuestionField).Name, blobHelper);
-
-                        // Delete all existing blobs for this KB
-                        foreach (string blobName in blobInfoTemp.Keys)
-                        {
-                            await blobHelper.DeleteBlobAsync(blobName);
-                        }
-
-                        kb.LastRefreshDateTime = DateTime.UtcNow;
-                        await kBInfoHelper.InsertOrMergeKBInfo(kb);
+                        await this.RefreshKnowledgeBaseAsync(kb);
                     }
                     catch
                     {
@@ -113,6 +94,34 @@ namespace ListSearch.Controllers
             }
         }
 
+        // Refresh the data in the given knowledge base
+        private async Task RefreshKnowledgeBaseAsync(KBInfo kb)
+        {
+            Dictionary<string, Uri> blobInfoTemp = new Dictionary<string, Uri>();
+            GetListContentsResponse listContents = new GetListContentsResponse();
+
+            do
+            {
+                ColumnInfo questionColumn = JsonConvert.DeserializeObject<ColumnInfo>(kb.QuestionField);
+                string blobName = Guid.NewGuid().ToString() + JsonFileExtension;
+                listContents = await this.GetListContents(kb.SharePointListId, kb.AnswerFields, questionColumn.Name, kb.SharePointSiteId, this.connectionString, listContents.ODataNextLink ?? null);
+                string blobUrl = await this.blobHelper.UploadBlobAsync(JsonConvert.SerializeObject(listContents), blobName);
+                blobInfoTemp.Add(blobName, new Uri(blobUrl));
+            }
+            while (!string.IsNullOrEmpty(listContents.ODataNextLink));
+
+            await this.RefreshKB(kb.KBId, blobInfoTemp, JsonConvert.DeserializeObject<ColumnInfo>(kb.QuestionField).Name, this.blobHelper);
+
+            // Delete all existing blobs for this KB
+            foreach (string blobName in blobInfoTemp.Keys)
+            {
+                await this.blobHelper.DeleteBlobAsync(blobName);
+            }
+
+            kb.LastRefreshDateTime = DateTime.UtcNow;
+            await this.kbInfoHelper.InsertOrMergeKBInfo(kb);
+        }
+
         /// <summary>
         /// Refreshes KB - Updates and Publishes KB.
         /// </summary>
@@ -121,7 +130,7 @@ namespace ListSearch.Controllers
         /// <param name="questionField">question field</param>
         /// <param name="blobHelper">Blob helper object</param>
         /// <returns>Task that represents refresh operation.</returns>
-        public async Task RefreshKB(string kbId, Dictionary<string, Uri> blobInfo, string questionField, BlobHelper blobHelper)
+        private async Task RefreshKB(string kbId, Dictionary<string, Uri> blobInfo, string questionField, BlobHelper blobHelper)
         {
             if (string.IsNullOrWhiteSpace(kbId))
             {
