@@ -59,7 +59,7 @@ namespace Lib.Helpers
         /// <param name="refreshToken">refresh token</param>
         /// <param name="tokenType">type of token to be fetched</param>
         /// <returns><see cref="Task"/> that resolves to <see cref="RefreshTokenResponse"/></returns>
-        public async Task<RefreshTokenResponse> GetRefreshToken(string scope, string refreshToken, string tokenType)
+        public async Task<RefreshTokenResponse> GetAccessTokenAsync(string scope, string refreshToken, string tokenType)
         {
             try
             {
