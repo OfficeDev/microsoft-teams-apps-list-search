@@ -58,8 +58,8 @@ namespace Lib.Helpers
         /// <param name="scope">scope</param>
         /// <param name="refreshToken">refresh token</param>
         /// <param name="tokenType">type of token to be fetched</param>
-        /// <returns><see cref="Task"/> that resolves to <see cref="RefreshTokenResponse"/></returns>
-        public async Task<RefreshTokenResponse> GetAccessTokenAsync(string scope, string refreshToken, string tokenType)
+        /// <returns><see cref="Task"/> that resolves to an access token</returns>
+        public async Task<string> GetAccessTokenAsync(string scope, string refreshToken, string tokenType)
         {
             try
             {
@@ -90,7 +90,7 @@ namespace Lib.Helpers
 
                 if (storeTokenResponse.HttpStatusCode == (int)System.Net.HttpStatusCode.NoContent)
                 {
-                    return refreshTokenResponse;
+                    return refreshTokenResponse.AccessToken;
                 }
                 else
                 {

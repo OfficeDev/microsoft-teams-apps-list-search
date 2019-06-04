@@ -48,7 +48,7 @@ namespace Lib.Helpers
         public async Task<string> GetListContents(HttpClient httpClient, string refreshToken, string listId, string fieldsToFetch, string sharePointSiteId, string connectionString, string tenantId, string encryptionDecryptionKey, string odataNextUrl = null)
         {
             TokenHelper tokenHelper = new TokenHelper(httpClient, connectionString, tenantId, this.clientId, this.clientSecret, encryptionDecryptionKey);
-            RefreshTokenResponse refreshTokenResponse = await tokenHelper.GetAccessTokenAsync(Scope, refreshToken, TokenTypes.GraphTokenType);
+            var accessToken = await tokenHelper.GetAccessTokenAsync(Scope, refreshToken, TokenTypes.GraphTokenType);
             string uri;
             if (string.IsNullOrEmpty(odataNextUrl))
             {
@@ -61,7 +61,7 @@ namespace Lib.Helpers
 
             var request = new HttpRequestMessage(HttpMethod.Get, uri);
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", refreshTokenResponse.AccessToken);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
             HttpResponseMessage response = await httpClient.SendAsync(request);
             string responseBody = await response.Content.ReadAsStringAsync();
             if (!response.IsSuccessStatusCode)
