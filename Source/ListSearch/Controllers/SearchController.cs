@@ -83,15 +83,15 @@ namespace ListSearch.Controllers
             this.ViewData["token"] = token;
             this.ViewData["searchKeyword"] = searchedKeyword;
 
-            KBInfoHelper kBInfoHelper = new KBInfoHelper(this.connectionString);
-            KBInfo kbInfo = await kBInfoHelper.GetKBInfo(kbId);
+            KBInfoHelper kbInfoHelper = new KBInfoHelper(this.connectionString);
+            KBInfo kbInfo = await kbInfoHelper.GetKBInfo(kbId);
 
             string hostUrl = ConfigurationManager.AppSettings["HostUrl"];
-            QnAMakerService qnAMakerHelper = new QnAMakerService(this.httpClient);
+            QnAMakerService qnaMakerHelper = new QnAMakerService(this.httpClient);
 
             int top = this.topResultsToBeFetched;
             GenerateAnswerRequest generateAnswerRequest = new GenerateAnswerRequest(searchedKeyword, top);
-            GenerateAnswerResponse result = await qnAMakerHelper.GenerateAnswerAsync(generateAnswerRequest, kbId, hostUrl);
+            GenerateAnswerResponse result = await qnaMakerHelper.GenerateAnswerAsync(generateAnswerRequest, kbId, hostUrl);
 
             List<SelectedSearchResult> selectedSearchResults = new List<SelectedSearchResult>();
 
