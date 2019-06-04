@@ -47,8 +47,8 @@ namespace Lib.Helpers
         /// <returns><see cref="Task"/> that resolves to <see cref="string"/> representing contents of the file.</returns>
         public async Task<string> GetListContents(HttpClient httpClient, string refreshToken, string listId, string fieldsToFetch, string sharePointSiteId, string connectionString, string tenantId, string encryptionDecryptionKey, string odataNextUrl = null)
         {
-            TokenHelper tokenHelper = new TokenHelper(connectionString, tenantId);
-            RefreshTokenResponse refreshTokenResponse = await tokenHelper.GetRefreshToken(httpClient, this.clientId, this.clientSecret, Scope, refreshToken, TokenTypes.GraphTokenType, encryptionDecryptionKey);
+            TokenHelper tokenHelper = new TokenHelper(httpClient, connectionString, tenantId, this.clientId, this.clientSecret, encryptionDecryptionKey);
+            RefreshTokenResponse refreshTokenResponse = await tokenHelper.GetRefreshToken(Scope, refreshToken, TokenTypes.GraphTokenType);
             string uri;
             if (string.IsNullOrEmpty(odataNextUrl))
             {

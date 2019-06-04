@@ -268,7 +268,7 @@ namespace ListSearch.Controllers
             string appId = ConfigurationManager.AppSettings["LoginAppClientId"];
             string appSecret = ConfigurationManager.AppSettings["LoginAppClientSecret"];
 
-            TokenHelper tokenHelper = new TokenHelper(connectionString, tenantId);
+            TokenHelper tokenHelper = new TokenHelper(this.httpClient, connectionString, tenantId, appId, appSecret, tokenKey: appSecret);
             TokenEntity refreshTokenEntity = await tokenHelper.GetTokenEntity(TokenTypes.GraphTokenType);
             GraphHelper graphHelper = new GraphHelper(appId, appSecret);
 

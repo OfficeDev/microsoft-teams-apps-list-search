@@ -5,7 +5,6 @@
 namespace Lib.Helpers
 {
     using System;
-    using System.Configuration;
     using System.IO;
     using System.Net.Http;
     using System.Security.Cryptography;
@@ -25,86 +24,66 @@ namespace Lib.Helpers
         private const string PartitionKey = "Token";
 
         private static readonly string TokenTableName = StorageInfo.TokenTableName;
-        private readonly CloudStorageAccount storageAccount;
         private readonly CloudTableClient cloudTableClient;
         private readonly string tokenEndpoint;
+        private readonly HttpClient httpClient;
+        private readonly string clientId;
+        private readonly string clientSecret;
+        private readonly string tokenKey;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TokenHelper"/> class.
         /// </summary>
+        /// <param name="httpClient">http client</param>
         /// <param name="connectionString">connection string of storage.</param>
         /// <param name="tenantId">tenant Id.</param>
-        public TokenHelper(string connectionString, string tenantId)
+        /// <param name="clientId">client id of the auth app</param>
+        /// <param name="clientSecret">client secret for the app</param>
+        /// <param name="tokenKey">key used to secure the token</param>
+        public TokenHelper(HttpClient httpClient, string connectionString, string tenantId, string clientId, string clientSecret, string tokenKey)
         {
-            this.storageAccount = CloudStorageAccount.Parse(connectionString);
-            this.cloudTableClient = this.storageAccount.CreateCloudTableClient();
+            var storageAccount = CloudStorageAccount.Parse(connectionString);
+            this.cloudTableClient = storageAccount.CreateCloudTableClient();
+
+            this.httpClient = httpClient;
             this.tokenEndpoint = $"https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token";
-        }
-
-        /// <summary>
-        /// Decrypt Token.
-        /// </summary>
-        /// <param name="token">Token to be decrypted.</param>
-        /// <param name="key">key to be used for decryption.</param>
-        /// <returns>Decrypted token.</returns>
-        public static string DecryptToken(string token, string key)
-        {
-            byte[] cipherBytes = Convert.FromBase64String(token);
-            using (Aes encryptor = Aes.Create())
-            {
-                Rfc2898DeriveBytes pdb = new Rfc2898DeriveBytes(key, Encoding.UTF8.GetBytes(key));
-                encryptor.Key = pdb.GetBytes(32);
-                encryptor.IV = pdb.GetBytes(16);
-                using (MemoryStream ms = new MemoryStream())
-                {
-                    using (CryptoStream cs = new CryptoStream(ms, encryptor.CreateDecryptor(), CryptoStreamMode.Write))
-                    {
-                        cs.Write(cipherBytes, 0, cipherBytes.Length);
-                        cs.Close();
-                    }
-
-                    token = Encoding.UTF8.GetString(ms.ToArray());
-                }
-            }
-
-            return token;
+            this.clientId = clientId;
+            this.clientSecret = clientSecret;
+            this.tokenKey = tokenKey;
         }
 
         /// <summary>
         /// Gets the refresh token.
         /// </summary>
-        /// <param name="httpClient">http client</param>
-        /// <param name="clientId">client id of the auth app</param>
-        /// <param name="clientSecret">client secret for the app</param>
         /// <param name="scope">scope</param>
         /// <param name="refreshToken">refresh token</param>
         /// <param name="tokenType">type of token to be fetched</param>
-        /// <param name="key">key to be used for encryption and decryption</param>
         /// <returns><see cref="Task"/> that resolves to <see cref="RefreshTokenResponse"/></returns>
-        public async Task<RefreshTokenResponse> GetRefreshToken(HttpClient httpClient, string clientId, string clientSecret, string scope, string refreshToken, string tokenType, string key)
+        public async Task<RefreshTokenResponse> GetRefreshToken(string scope, string refreshToken, string tokenType)
         {
             try
             {
-                string body = $"&client_id={clientId}" +
+                string body = $"&client_id={this.clientId}" +
                     $"&scope={Uri.EscapeDataString(scope)}" +
-                    $"&refresh_token={Uri.EscapeDataString(DecryptToken(refreshToken, key))}" +
+                    $"&refresh_token={Uri.EscapeDataString(this.DecryptToken(refreshToken, this.tokenKey))}" +
                     $"&grant_type={RefreshTokenGrantType}" +
-                    $"&client_secret={Uri.EscapeDataString(clientSecret)}";
+                    $"&client_secret={Uri.EscapeDataString(this.clientSecret)}";
 
                 var request = new HttpRequestMessage(HttpMethod.Post, this.tokenEndpoint)
                 {
                     Content = new StringContent(body, Encoding.UTF8, "application/x-www-form-urlencoded")
                 };
-                HttpResponseMessage response = await httpClient.SendAsync(request);
+
+                var response = await this.httpClient.SendAsync(request);
                 string responseBody = await response.Content.ReadAsStringAsync();
-                RefreshTokenResponse refreshTokenResponse = JsonConvert.DeserializeObject<RefreshTokenResponse>(responseBody);
+                var refreshTokenResponse = JsonConvert.DeserializeObject<RefreshTokenResponse>(responseBody);
 
                 TokenEntity tokenEntity = new TokenEntity()
                 {
                     PartitionKey = PartitionKey,
                     RowKey = tokenType,
-                    AccessToken = this.EncryptToken(refreshTokenResponse.AccessToken, key),
-                    RefreshToken = this.EncryptToken(refreshTokenResponse.RefreshToken, key),
+                    AccessToken = this.EncryptToken(refreshTokenResponse.AccessToken, this.tokenKey),
+                    RefreshToken = this.EncryptToken(refreshTokenResponse.RefreshToken, this.tokenKey),
                 };
 
                 TableResult storeTokenResponse = await this.StoreToken(tokenEntity, tokenType);
@@ -175,6 +154,35 @@ namespace Lib.Helpers
                     }
 
                     token = Convert.ToBase64String(ms.ToArray());
+                }
+            }
+
+            return token;
+        }
+
+        /// <summary>
+        /// Decrypt Token.
+        /// </summary>
+        /// <param name="token">Token to be decrypted.</param>
+        /// <param name="key">key to be used for decryption.</param>
+        /// <returns>Decrypted token.</returns>
+        private string DecryptToken(string token, string key)
+        {
+            byte[] cipherBytes = Convert.FromBase64String(token);
+            using (Aes encryptor = Aes.Create())
+            {
+                Rfc2898DeriveBytes pdb = new Rfc2898DeriveBytes(key, Encoding.UTF8.GetBytes(key));
+                encryptor.Key = pdb.GetBytes(32);
+                encryptor.IV = pdb.GetBytes(16);
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    using (CryptoStream cs = new CryptoStream(ms, encryptor.CreateDecryptor(), CryptoStreamMode.Write))
+                    {
+                        cs.Write(cipherBytes, 0, cipherBytes.Length);
+                        cs.Close();
+                    }
+
+                    token = Encoding.UTF8.GetString(ms.ToArray());
                 }
             }
 
