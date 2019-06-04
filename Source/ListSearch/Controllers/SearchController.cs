@@ -171,7 +171,6 @@ namespace ListSearch.Controllers
         /// <param name="token">jwt auth token.</param>
         /// <returns><see cref="JsonResult"/> denoting success</returns>
         [HttpPost]
-        [HttpPut]
         [HandleError]
         [JwtExceptionFilter]
         public JsonResult SetClickedItem(string answer, string question, string id, string token)
