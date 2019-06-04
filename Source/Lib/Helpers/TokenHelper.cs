@@ -69,20 +69,6 @@ namespace Lib.Helpers
             return this.DecryptToken(token.AccessToken, this.tokenKey);
         }
 
-        /// <summary>
-        /// Gets token from storage.
-        /// </summary>
-        /// <param name="tokenType">type of token to be retrieved.</param>
-        /// <returns>TokenEntity</returns>
-        public async Task<TokenEntity> GetTokenEntity(string tokenType)
-        {
-            CloudTable cloudTable = this.cloudTableClient.GetTableReference(TokenTableName);
-            TableOperation retrieveOperation = TableOperation.Retrieve<TokenEntity>(PartitionKey, tokenType);
-            TableResult retrievedResult = await cloudTable.ExecuteAsync(retrieveOperation);
-            TokenEntity result = (TokenEntity)retrievedResult.Result;
-            return result;
-        }
-
         // Refresh the token
         private async Task<TokenEntity> RefreshTokenAsync(TokenEntity token)
         {
@@ -121,6 +107,20 @@ namespace Lib.Helpers
             {
                 throw new Exception($"HTTP Error code - {response.StatusCode}"); // TODO: Handle Exception
             }
+        }
+
+        /// <summary>
+        /// Gets token from storage.
+        /// </summary>
+        /// <param name="tokenType">type of token to be retrieved.</param>
+        /// <returns>TokenEntity</returns>
+        private async Task<TokenEntity> GetTokenEntity(string tokenType)
+        {
+            CloudTable cloudTable = this.cloudTableClient.GetTableReference(TokenTableName);
+            TableOperation retrieveOperation = TableOperation.Retrieve<TokenEntity>(PartitionKey, tokenType);
+            TableResult retrievedResult = await cloudTable.ExecuteAsync(retrieveOperation);
+            TokenEntity result = (TokenEntity)retrievedResult.Result;
+            return result;
         }
 
         /// <summary>

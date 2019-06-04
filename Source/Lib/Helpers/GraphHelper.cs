@@ -15,40 +15,31 @@ namespace Lib.Helpers
     /// </summary>
     public class GraphHelper
     {
-        private const string Scope = "offline_access https://graph.microsoft.com/Sites.Read.All";
         private const string GraphV1Endpoint = "https://graph.microsoft.com/v1.0";
 
-        private readonly string clientId;
-        private readonly string clientSecret;
+        private readonly TokenHelper tokenHelper;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="GraphHelper"/> class.
         /// </summary>
-        /// <param name="appId">id of the app used for login.</param>
-        /// <param name="appSecret">secret for the app used for login.</param>
-        public GraphHelper(string appId, string appSecret)
+        /// <param name="tokenHelper">Token helper</param>
+        public GraphHelper(TokenHelper tokenHelper)
         {
-            this.clientId = appId;
-            this.clientSecret = appSecret;
+            this.tokenHelper = tokenHelper;
         }
 
         /// <summary>
         /// Gets contents of the sharepoint list from graph.
         /// </summary>
         /// <param name="httpClient">Http client.</param>
-        /// <param name="refreshToken">Refresh token of the user.</param>
         /// <param name="listId">Id of the list to be fetched.</param>
         /// <param name="fieldsToFetch">fields to fetch from list.</param>
         /// <param name="sharePointSiteId">site id of sharepoint site.</param>
-        /// <param name="connectionString">connection string of storage.</param>
-        /// <param name="tenantId">tenant Id.</param>
-        /// <param name="encryptionDecryptionKey">encryption decryption key.</param>
         /// <param name="odataNextUrl">url to fetch next page of data</param>
         /// <returns><see cref="Task"/> that resolves to <see cref="string"/> representing contents of the file.</returns>
-        public async Task<string> GetListContents(HttpClient httpClient, string refreshToken, string listId, string fieldsToFetch, string sharePointSiteId, string connectionString, string tenantId, string encryptionDecryptionKey, string odataNextUrl = null)
+        public async Task<string> GetListContents(HttpClient httpClient, string listId, string fieldsToFetch, string sharePointSiteId, string odataNextUrl = null)
         {
-            TokenHelper tokenHelper = new TokenHelper(httpClient, connectionString, tenantId, this.clientId, this.clientSecret, encryptionDecryptionKey);
-            var accessToken = await tokenHelper.GetAccessTokenAsync(TokenTypes.GraphTokenType);
+            var accessToken = await this.tokenHelper.GetAccessTokenAsync(TokenTypes.GraphTokenType);
             string uri;
             if (string.IsNullOrEmpty(odataNextUrl))
             {

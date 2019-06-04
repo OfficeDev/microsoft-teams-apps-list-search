@@ -269,8 +269,7 @@ namespace ListSearch.Controllers
             string appSecret = ConfigurationManager.AppSettings["LoginAppClientSecret"];
 
             TokenHelper tokenHelper = new TokenHelper(this.httpClient, connectionString, tenantId, appId, appSecret, tokenKey: appSecret);
-            TokenEntity refreshTokenEntity = await tokenHelper.GetTokenEntity(TokenTypes.GraphTokenType);
-            GraphHelper graphHelper = new GraphHelper(appId, appSecret);
+            GraphHelper graphHelper = new GraphHelper(tokenHelper);
 
             var fieldsToFetch = string.Join(
                 ",",
@@ -280,13 +279,9 @@ namespace ListSearch.Controllers
 
             string responseBody = await graphHelper.GetListContents(
                 httpClient: this.httpClient,
-                refreshToken: refreshTokenEntity.RefreshToken,
                 listId: listId,
                 fieldsToFetch: fieldsToFetch,
                 sharePointSiteId: sharePointSiteId,
-                connectionString: connectionString,
-                tenantId: tenantId,
-                encryptionDecryptionKey: appSecret,
                 odataNextUrl: odataNextUrl);
             return JsonConvert.DeserializeObject<GetListContentsResponse>(responseBody);
         }
