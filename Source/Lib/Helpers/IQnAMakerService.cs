@@ -16,8 +16,10 @@ namespace Lib.Helpers
         /// Gets Answer from QnA Maker API.
         /// </summary>
         /// <param name="request"><see cref="GenerateAnswerRequest"/> request for GenerateAnswer API.</param>
+        /// <param name="kbId">knowledge base id</param>
+        /// <param name="hostUrl">knowledge base host url</param>
         /// <returns>Task that resolves to <see cref="GenerateAnswerResponse"/> for the searched question.</returns>
-        Task<GenerateAnswerResponse> GenerateAnswerAsync(GenerateAnswerRequest request);
+        Task<GenerateAnswerResponse> GenerateAnswerAsync(GenerateAnswerRequest request, string kbId, string hostUrl);
 
         /// <summary>
         /// Updates KB using QnA Maker API.
@@ -29,8 +31,9 @@ namespace Lib.Helpers
         /// <summary>
         /// Publishes KB.
         /// </summary>
+        /// <param name="kbId">string kbid</param>
         /// <returns>Task that resolves to <see cref="bool"/> which represents success or failure of API call.</returns>
-        Task<bool> PublishKB();
+        Task<bool> PublishKB(string kbId = null);
 
         /// <summary>
         /// Creates KB using QnA Maker API.
@@ -38,6 +41,13 @@ namespace Lib.Helpers
         /// <param name="body"><see cref="CreateKBRequest"/> request to be sent to QnA Maker API.</param>
         /// <returns>Task that resolves to <see cref="QnAMakerResponse"/>.</returns>
         Task<QnAMakerResponse> CreateKB(CreateKBRequest body);
+
+        /// <summary>
+        /// Deletes a KB.
+        /// </summary>
+        /// <param name="kbId">string kbid</param>
+        /// <returns>Task that resolves to <see cref="bool"/> which represents success or failure of API call.</returns>
+        Task<bool> DeleteKB(string kbId);
 
         /// <summary>
         /// Gets operation status of QnA Maker Operation.
@@ -58,6 +68,13 @@ namespace Lib.Helpers
         /// <param name="response"><see cref="QnAMakerResponse"/> response to be awaited.</param>
         /// <returns>Operation state after completion.</returns>
         Task<string> AwaitOperationCompletionState(QnAMakerResponse response);
+
+        /// <summary>
+        /// Await Operation Completion State.
+        /// </summary>
+        /// <param name="response"> response to be awaited.</param>
+        /// <returns>Operation state after completion.</returns>
+        Task<QnAMakerResponse> AwaitOperationCompletionResponse(QnAMakerResponse response);
 
         /// <summary>
         /// Check if operation is successful.

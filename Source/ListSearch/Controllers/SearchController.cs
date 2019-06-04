@@ -87,12 +87,11 @@ namespace ListSearch.Controllers
             KBInfo kbInfo = await kBInfoHelper.GetKBInfo(kbId);
 
             string hostUrl = ConfigurationManager.AppSettings["HostUrl"];
-            string endpointKey = ConfigurationManager.AppSettings["EndpointKey"];
-            QnAMakerService qnAMakerHelper = new QnAMakerService(hostUrl, kbId, endpointKey, this.httpClient);
+            QnAMakerService qnAMakerHelper = new QnAMakerService(this.httpClient);
 
             int top = this.topResultsToBeFetched;
             GenerateAnswerRequest generateAnswerRequest = new GenerateAnswerRequest(searchedKeyword, top);
-            GenerateAnswerResponse result = await qnAMakerHelper.GenerateAnswerAsync(generateAnswerRequest);
+            GenerateAnswerResponse result = await qnAMakerHelper.GenerateAnswerAsync(generateAnswerRequest, kbId, hostUrl);
 
             List<SelectedSearchResult> selectedSearchResults = new List<SelectedSearchResult>();
 
