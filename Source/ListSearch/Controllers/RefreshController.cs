@@ -269,7 +269,7 @@ namespace ListSearch.Controllers
             string appSecret = ConfigurationManager.AppSettings["LoginAppClientSecret"];
 
             TokenHelper tokenHelper = new TokenHelper(this.httpClient, connectionString, tenantId, appId, appSecret, tokenKey: appSecret);
-            GraphHelper graphHelper = new GraphHelper(tokenHelper);
+            GraphHelper graphHelper = new GraphHelper(this.httpClient, tokenHelper);
 
             var fieldsToFetch = string.Join(
                 ",",
@@ -277,8 +277,7 @@ namespace ListSearch.Controllers
                     .Select(field => field.Name)
                     .Concat(new string[] { questionField, "id" }));
 
-            string responseBody = await graphHelper.GetListContents(
-                httpClient: this.httpClient,
+            string responseBody = await graphHelper.GetListContentsAsync(
                 listId: listId,
                 fieldsToFetch: fieldsToFetch,
                 sharePointSiteId: sharePointSiteId,
