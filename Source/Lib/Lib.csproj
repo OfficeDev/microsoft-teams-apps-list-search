@@ -70,6 +70,7 @@
     <Compile Include="Helpers\JwtHelper.cs" />
     <Compile Include="Helpers\KBInfoHelper.cs" />
     <Compile Include="Helpers\QnAMakerService.cs" />
+    <Compile Include="Helpers\KnowledgeBaseRefreshHelper.cs" />
     <Compile Include="Helpers\TokenHelper.cs" />
     <Compile Include="Models\Add.cs" />
     <Compile Include="Models\ColumnInfo.cs" />
@@ -84,6 +85,7 @@
     <Compile Include="Models\ExtractionOptions.cs" />
     <Compile Include="Models\File.cs" />
     <Compile Include="Models\GetKnowledgeBaseDetailsResponse.cs" />
+    <Compile Include="Models\GetListContentsResponse.cs" />
     <Compile Include="Models\JWTExceptions.cs" />
     <Compile Include="Models\KBInfo.cs" />
     <Compile Include="Models\QnAMakerEndpointResponse.cs" />

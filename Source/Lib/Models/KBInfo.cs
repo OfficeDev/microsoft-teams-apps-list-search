@@ -90,5 +90,17 @@ namespace Lib.Models
         /// </summary>
         [JsonProperty("SharePointListId")]
         public string SharePointListId { get; set; }
+
+        /// <summary>
+        /// Gets or sets last refresh attempt timestamp
+        /// </summary>
+        [JsonProperty("LastRefreshAttemptDateTime")]
+        public DateTime LastRefreshAttemptDateTime { get; set; }
+
+        /// <summary>
+        /// Gets or sets last refresh attempt error (will be null/empty if successful)
+        /// </summary>
+        [JsonProperty("LastRefreshAttemptError")]
+        public string LastRefreshAttemptError { get; set; }
     }
 }
