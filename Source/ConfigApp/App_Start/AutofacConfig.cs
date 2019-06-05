@@ -26,8 +26,19 @@ namespace ConfigApp
             var builder = new ContainerBuilder();
             builder.RegisterControllers(Assembly.GetExecutingAssembly());
 
-            builder.Register(c => new HttpClient()).As<HttpClient>().SingleInstance();
-            builder.Register(c => new TokenHelper(ConfigurationManager.AppSettings["StorageConnectionString"], ConfigurationManager.AppSettings["ida:TenantId"])).As<TokenHelper>().SingleInstance();
+            builder.Register(c => new HttpClient())
+                .As<HttpClient>()
+                .SingleInstance();
+
+            builder.Register(c => new TokenHelper(
+                c.Resolve<HttpClient>(),
+                ConfigurationManager.AppSettings["StorageConnectionString"],
+                ConfigurationManager.AppSettings["ida:TenantId"],
+                ConfigurationManager.AppSettings["GraphAppClientId"],
+                ConfigurationManager.AppSettings["GraphAppClientSecret"],
+                ConfigurationManager.AppSettings["TokenKey"]))
+                .As<TokenHelper>()
+                .SingleInstance();
 
             builder.RegisterType<HomeController>().InstancePerRequest();
 
