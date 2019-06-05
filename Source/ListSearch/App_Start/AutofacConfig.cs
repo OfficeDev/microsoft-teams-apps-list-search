@@ -14,6 +14,8 @@ namespace ListSearch.App_Start
     using Autofac.Integration.WebApi;
     using Lib.Helpers;
     using ListSearch.Controllers;
+    using Microsoft.ApplicationInsights;
+    using Microsoft.ApplicationInsights.Extensibility;
 
     /// <summary>
     /// Autofac configuration
@@ -29,6 +31,11 @@ namespace ListSearch.App_Start
 
             builder.RegisterControllers(Assembly.GetExecutingAssembly());
             builder.RegisterApiControllers(Assembly.GetExecutingAssembly());
+
+            builder.Register(c =>
+            {
+                return new TelemetryClient(new TelemetryConfiguration(ConfigurationManager.AppSettings["APPINSIGHTS_INSTRUMENTATIONKEY"]));
+            }).SingleInstance();
 
             builder.Register(c => new HttpClient()).As<HttpClient>().SingleInstance();
             builder.Register(c => new JwtHelper(
