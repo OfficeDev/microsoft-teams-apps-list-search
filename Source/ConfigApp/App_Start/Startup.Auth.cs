@@ -9,6 +9,7 @@ namespace ConfigApp
     using System.Linq;
     using System.Threading.Tasks;
     using System.Web.Helpers;
+    using Autofac;
     using Lib;
     using Lib.Helpers;
     using Microsoft.IdentityModel.Clients.ActiveDirectory;
@@ -33,7 +34,8 @@ namespace ConfigApp
         /// Configure Auth
         /// </summary>
         /// <param name="app">App builder</param>
-        public void ConfigureAuth(IAppBuilder app)
+        /// <param name="container">DI container</param>
+        public void ConfigureAuth(IAppBuilder app, Autofac.IContainer container)
         {
             app.SetDefaultSignInAsAuthenticationType(CookieAuthenticationDefaults.AuthenticationType);
 
@@ -89,14 +91,15 @@ namespace ConfigApp
                 {
                     AuthorizationCodeReceived = (context) =>
                     {
-                        var redirectUri = context.Request.Uri.GetLeftPart(UriPartial.Path);
-                        var credential = new ClientCredential(context.Options.ClientId, ConfigurationManager.AppSettings["GraphAppSecret"]);
                         var authContext = new AuthenticationContext(context.Options.Authority);
-                        var tokenResponse = authContext.AcquireTokenByAuthorizationCodeAsync(context.Code, new Uri(redirectUri), credential, context.Options.ClientId);
-                        string userEmail = context.AuthenticationTicket.Identity.Name;
-                        TokenHelper tokenHelper = new TokenHelper(new System.Net.Http.HttpClient(), ConfigurationManager.AppSettings["StorageConnectionString"], ConfigurationManager.AppSettings["ida:TenantId"], ConfigurationManager.AppSettings["GraphAppClientId"], ConfigurationManager.AppSettings["GraphAppSecret"], ConfigurationManager.AppSettings["TokenKey"]);
+                        var redirectUri = new Uri(context.Request.Uri.GetLeftPart(UriPartial.Path));
+                        var credential = new ClientCredential(context.Options.ClientId, ConfigurationManager.AppSettings["GraphAppClientSecret"]);
 
-                        return tokenHelper.SetSharePointUserAsync(userEmail, tokenResponse.Result.AccessToken);
+                        var tokenResponse = authContext.AcquireTokenByAuthorizationCodeAsync(context.Code, redirectUri, credential, context.Options.ClientId);
+
+                        var tokenHelper = container.Resolve<TokenHelper>();
+                        var upn = context.AuthenticationTicket.Identity.Name;
+                        return tokenHelper.SetSharePointUserAsync(upn, tokenResponse.Result.AccessToken);
                     },
 
                     RedirectToIdentityProvider = (context) =>
