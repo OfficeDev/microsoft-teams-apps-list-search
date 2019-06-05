@@ -141,7 +141,7 @@ namespace Lib.Helpers
                 httpRequest.Content = new StringContent(JsonConvert.SerializeObject(body), Encoding.UTF8, "application/json");
                 httpRequest.Headers.Add(Constants.OcpApimSubscriptionKey, this.subscriptionKey);
 
-                HttpResponseMessage response = await this.httpClient.SendAsync(httpRequest);
+                var response = await this.httpClient.SendAsync(httpRequest);
                 response.EnsureSuccessStatusCode();
 
                 return JsonConvert.DeserializeObject<QnAMakerResponse>(await response.Content.ReadAsStringAsync());
