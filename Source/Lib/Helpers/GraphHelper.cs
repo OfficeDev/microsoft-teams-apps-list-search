@@ -47,7 +47,7 @@ namespace Lib.Helpers
             if (string.IsNullOrEmpty(odataNextUrl))
             {
                 var fieldsSpec = string.Join(",", fieldsToFetch);
-                uri = $"{GraphV1Endpoint}/sites/{sharePointSiteId}/lists/{listId}/items?expand=fields(select={fieldsToFetch})";
+                uri = $"{GraphV1Endpoint}/sites/{sharePointSiteId}/lists/{listId}/items?expand=fields(select={fieldsSpec})";
             }
             else
             {
