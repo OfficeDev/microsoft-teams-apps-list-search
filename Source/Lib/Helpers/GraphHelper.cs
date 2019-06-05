@@ -4,7 +4,7 @@
 
 namespace Lib.Helpers
 {
-    using System;
+    using System.Collections.Generic;
     using System.Net.Http;
     using System.Net.Http.Headers;
     using System.Threading.Tasks;
@@ -39,12 +39,14 @@ namespace Lib.Helpers
         /// <param name="sharePointSiteId">site id of sharepoint site.</param>
         /// <param name="odataNextUrl">url to fetch next page of data</param>
         /// <returns><see cref="Task"/> that resolves to <see cref="string"/> representing contents of the file.</returns>
-        public async Task<string> GetListContentsAsync(string listId, string fieldsToFetch, string sharePointSiteId, string odataNextUrl = null)
+        public async Task<string> GetListContentsAsync(string listId, IEnumerable<string> fieldsToFetch, string sharePointSiteId, string odataNextUrl = null)
         {
             var accessToken = await this.tokenHelper.GetAccessTokenAsync(TokenTypes.GraphTokenType);
+
             string uri;
             if (string.IsNullOrEmpty(odataNextUrl))
             {
+                var fieldsSpec = string.Join(",", fieldsToFetch);
                 uri = $"{GraphV1Endpoint}/sites/{sharePointSiteId}/lists/{listId}/items?expand=fields(select={fieldsToFetch})";
             }
             else
@@ -55,14 +57,11 @@ namespace Lib.Helpers
             var request = new HttpRequestMessage(HttpMethod.Get, uri);
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-            HttpResponseMessage response = await this.httpClient.SendAsync(request);
-            string responseBody = await response.Content.ReadAsStringAsync();
-            if (!response.IsSuccessStatusCode)
-            {
-                throw new Exception(responseBody);
-            }
 
-            return responseBody;
+            HttpResponseMessage response = await this.httpClient.SendAsync(request);
+            response.EnsureSuccessStatusCode();
+
+            return await response.Content.ReadAsStringAsync();
         }
     }
 }

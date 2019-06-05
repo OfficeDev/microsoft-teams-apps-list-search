@@ -25,9 +25,9 @@ namespace ListSearch.Controllers
         private const string JsonFileExtension = ".json";
         private readonly HttpClient httpClient;
         private readonly string subscriptionKey;
-        private readonly string connectionString;
         private readonly BlobHelper blobHelper;
         private readonly KBInfoHelper kbInfoHelper;
+        private readonly GraphHelper graphHelper;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RefreshController"/> class.
@@ -38,9 +38,15 @@ namespace ListSearch.Controllers
             this.httpClient = httpClient ?? throw new System.ArgumentNullException(nameof(httpClient));
             this.subscriptionKey = ConfigurationManager.AppSettings["Ocp-Apim-Subscription-Key"];
 
-            this.connectionString = ConfigurationManager.AppSettings["StorageConnectionString"];
-            this.blobHelper = new BlobHelper(this.connectionString);
-            this.kbInfoHelper = new KBInfoHelper(this.connectionString);
+            var connectionString = ConfigurationManager.AppSettings["StorageConnectionString"];
+            this.blobHelper = new BlobHelper(connectionString);
+            this.kbInfoHelper = new KBInfoHelper(connectionString);
+
+            string tenantId = ConfigurationManager.AppSettings["TenantId"];
+            string appId = ConfigurationManager.AppSettings["LoginAppClientId"];
+            string appSecret = ConfigurationManager.AppSettings["LoginAppClientSecret"];
+            var tokenHelper = new TokenHelper(this.httpClient, connectionString, tenantId, appId, appSecret, tokenKey: appSecret);
+            this.graphHelper = new GraphHelper(this.httpClient, tokenHelper);
         }
 
         /// <summary>
@@ -98,13 +104,13 @@ namespace ListSearch.Controllers
         private async Task RefreshKnowledgeBaseAsync(KBInfo kb)
         {
             Dictionary<string, Uri> blobInfoTemp = new Dictionary<string, Uri>();
-            GetListContentsResponse listContents = new GetListContentsResponse();
+            GetListContentsResponse listContents = null;
 
             do
             {
                 ColumnInfo questionColumn = JsonConvert.DeserializeObject<ColumnInfo>(kb.QuestionField);
                 string blobName = Guid.NewGuid().ToString() + JsonFileExtension;
-                listContents = await this.GetListContents(kb.SharePointListId, kb.AnswerFields, questionColumn.Name, kb.SharePointSiteId, this.connectionString, listContents.ODataNextLink ?? null);
+                listContents = await this.GetListContents(kb.SharePointListId, kb.AnswerFields, questionColumn.Name, kb.SharePointSiteId, listContents?.ODataNextLink ?? null);
                 string blobUrl = await this.blobHelper.UploadBlobAsync(JsonConvert.SerializeObject(listContents), blobName);
                 blobInfoTemp.Add(blobName, new Uri(blobUrl));
             }
@@ -259,25 +265,15 @@ namespace ListSearch.Controllers
         /// <param name="answerFields">Answer fields to be used for KB.</param>
         /// <param name="questionField">question field.</param>
         /// <param name="sharePointSiteId">site id of sharepoint site.</param>
-        /// <param name="connectionString">connection string of storage.</param>
         /// <param name="odataNextUrl">odata next url</param>
         /// <returns><see cref="Task"/> that resolves to <see cref="GetListContentsResponse"/> which represents the list response.</returns>
-        private async Task<GetListContentsResponse> GetListContents(string listId, string answerFields, string questionField, string sharePointSiteId, string connectionString, string odataNextUrl)
+        private async Task<GetListContentsResponse> GetListContents(string listId, string answerFields, string questionField, string sharePointSiteId, string odataNextUrl)
         {
-            string tenantId = ConfigurationManager.AppSettings["TenantId"];
-            string appId = ConfigurationManager.AppSettings["LoginAppClientId"];
-            string appSecret = ConfigurationManager.AppSettings["LoginAppClientSecret"];
+            var fieldsToFetch = JsonConvert.DeserializeObject<List<ColumnInfo>>(answerFields)
+                .Select(field => field.Name)
+                .Concat(new string[] { questionField, "id" });
 
-            TokenHelper tokenHelper = new TokenHelper(this.httpClient, connectionString, tenantId, appId, appSecret, tokenKey: appSecret);
-            GraphHelper graphHelper = new GraphHelper(this.httpClient, tokenHelper);
-
-            var fieldsToFetch = string.Join(
-                ",",
-                JsonConvert.DeserializeObject<List<ColumnInfo>>(answerFields)
-                    .Select(field => field.Name)
-                    .Concat(new string[] { questionField, "id" }));
-
-            string responseBody = await graphHelper.GetListContentsAsync(
+            string responseBody = await this.graphHelper.GetListContentsAsync(
                 listId: listId,
                 fieldsToFetch: fieldsToFetch,
                 sharePointSiteId: sharePointSiteId,
