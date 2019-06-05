@@ -20,5 +20,98 @@
 input,
 select,
 textarea {
-    max-width: 280px;
+    /*max-width: 280px;*/
+    height: 31px !important;
+}
+
+.userIcon {
+    height: 70px;
+    width: 70px;
+    border-radius: 50%;
+}
+
+.sharePointUserIcon {
+    height: 50px;
+    margin-left: -15px;
+}
+
+.userRemove {
+    margin-top: 3%;
+    margin-left: 0%;
+    padding-left: 0%;
+    float: left;
+}
+
+.usersCenter {
+    margin: auto;
+    width: 75%;
+}
+
+.userEmail {
+    font-size: 10px;
+    color: #03225C
+}
+
+.fontUnset {
+    font-weight: unset;
+}
+
+.btnPurple {
+    background-color: #6264A7;
+    color: white;
+}
+
+input[type="radio"] {
+    position: absolute;
+    margin-top: -5px;
+    margin-left: -20px;
+}
+
+
+#notification {
+    position: fixed;
+    top: 53px;
+    right: 5px;
+    z-index: 1000;
+    width: 30%;
+    text-align: left;
+    font-weight: normal;
+    font-size: 13px;
+    color: white;
+    background-color: grey;
+    padding: 5px;
+    border-radius: 7px;
+}
+
+    #notification span.dismiss {
+        border: 1px solid #FFF;
+        padding: 0 5px;
+        cursor: pointer;
+        float: right;
+        border-radius: 7px;
+    }
+
+    #notification a {
+        color: white;
+        text-decoration: none;
+        font-weight: bold
+    }
+
+.loader {
+    position: absolute;
+    z-index: 9999;
+    opacity: 0.5;
+    background: #e9e9e9;
+    display: none;
+    height: 100%;
+    width: 100%;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+}
+
+.loader-image {
+    margin-left: 43%;
+    margin-top: 16%;
 }

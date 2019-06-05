@@ -12,5 +12,10 @@ namespace Lib
         /// Constant QnaMaker subscription key
         /// </summary>
         public const string OcpApimSubscriptionKey = "Ocp-Apim-Subscription-Key";
+
+        /// <summary>
+        /// AuthenticationType value for SharePoint login
+        /// </summary>
+        public const string SharePointAppLoginAuthenticationType = "SharePointAppLogin";
     }
 }

@@ -1,4 +1,101 @@
-﻿@{
+﻿@using Lib.Models
+@{
     ViewBag.Title = "Home Page";
 }
-<h2>@ViewBag.Title</h2>
+
+@model IEnumerable<KBInfo>
+@{
+    List<KBInfo> kbInfo = Model.AsEnumerable().ToList();
+}
+<br />
+<div>
+    <div class="container">
+        <label id="home" class="glyphicon  glyphicon-home" /> <label>Home</label>
+    </div>
+    <br />
+    <div class="container">
+        <div class="row">
+            <div class="col-xs-6">
+                <button type="button" id="addNewSharepointList" class="btn disableAction btnPurple" onclick="location.href='@Url.Action("ConfigureList", "Home")'">Add a new Sharepoint List</button>
+                <label class="fontUnset">Adds a new Sharepoint list to the List Search App</label>
+            </div>
+            <div class="col-xs-4">
+                @if (ViewBag.IsSharepointUserConfigured == false || ViewBag.IsSharepointUserConfigured == null)
+                {
+                    <script type="text/javascript">
+                        $(document).ready(function () {
+                            $(".disableAction").attr("disabled", true);
+                        })
+
+                    </script>
+
+                    <div>
+                        <input type="button" class="btn btnPurple" id="btnSetSharepointUser" value="Set Sharepoint user" onclick="location.href='@Url.Action("LoginAsSharepointUser", "Home")'" />
+                    </div>
+                }
+                @if (ViewBag.IsSharepointUserConfigured == true)
+                {
+                    <div>
+                        <label align="left">Access the Sharepoint As:</label>
+
+                        <div class="form-inline">
+                            <div class="form-group">
+                                <img src="~/Content/Images/userIcon.png" class="sharePointUserIcon" />
+                            </div>
+                            <div class="form-group" align="left">
+                                <h5>@ViewBag.UserName</h5>
+                                <label class="userEmail">@ViewBag.Email </label>
+                            </div>
+                            <div class="form-group">
+                                <a href="#" class="btn-link btn-sm" onclick="location.href='@Url.Action("LoginAsSharepointUser", "Home")'">Change</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div align="left">
+
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+</div>
+<br />
+<div class="container">
+    <div class="row">
+        <div class="col-xs-12 col-sm-12">
+            <div class="row">
+                <div class="col-sm-4">
+                    <label>Sharepoint Lists</label>
+                </div>
+                <div class="col-sm-3">
+                    <label>Refresh frequency</label>
+                </div>
+                <div class="col-sm-1">
+                </div>
+                <div class="col-sm-1">
+                </div>
+            </div>
+            <hr />
+            @foreach (var kbList in Model)
+            {
+                <div class="row">
+                    <div class="col-sm-4">
+                        <a class="text">@kbList.KBName</a>
+                    </div>
+                    <div class="col-sm-3">
+                        <label class="fontUnset">@kbList.RefreshFrequencyInHours hours</label>
+                    </div>
+                    <div class="col-sm-1">
+                        <button class="btn btn-sm disableAction">Edit</button>
+                    </div>
+                    <div class="col-sm-1">
+                        <button class="btn btn-sm disableAction">Delete</button>
+                    </div>
+                </div>
+                <hr />
+            }
+        </div>
+    </div>
+</div>

@@ -183,6 +183,8 @@
   </ItemGroup>
   <ItemGroup>
     <AdditionalFiles Include="stylecop.json" />
+    <Content Include="Content\Images\loader.gif" />
+    <Content Include="Content\Images\userIcon.png" />
     <Content Include="Views\Shared\Error.cshtml" />
   </ItemGroup>
   <ItemGroup>

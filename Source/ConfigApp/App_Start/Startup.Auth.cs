@@ -9,6 +9,9 @@ namespace ConfigApp
     using System.Linq;
     using System.Threading.Tasks;
     using System.Web.Helpers;
+    using Lib;
+    using Lib.Helpers;
+    using Microsoft.IdentityModel.Clients.ActiveDirectory;
     using Microsoft.IdentityModel.Protocols.OpenIdConnect;
     using Microsoft.Owin.Security;
     using Microsoft.Owin.Security.Cookies;
@@ -69,11 +72,44 @@ namespace ConfigApp
                         {
                             context.ProtocolMessage.Prompt = OpenIdConnectPrompt.Login;
                         }
+
                         return Task.CompletedTask;
                     }
                 }
             });
 
+            app.UseOpenIdConnectAuthentication(new OpenIdConnectAuthenticationOptions(Constants.SharePointAppLoginAuthenticationType)
+            {
+                AuthenticationMode = AuthenticationMode.Passive,
+                ClientId = ConfigurationManager.AppSettings["GraphAppClientID"],
+                Authority = authority,
+                PostLogoutRedirectUri = postLogoutRedirectUri,
+                SignInAsAuthenticationType = Constants.SharePointAppLoginAuthenticationType,
+                Notifications = new OpenIdConnectAuthenticationNotifications()
+                {
+                    AuthorizationCodeReceived = (context) =>
+                    {
+                        var redirectUri = context.Request.Uri.GetLeftPart(UriPartial.Path);
+                        var credential = new ClientCredential(context.Options.ClientId, ConfigurationManager.AppSettings["GraphAppSecret"]);
+                        var authContext = new AuthenticationContext(context.Options.Authority);
+                        var tokenResponse = authContext.AcquireTokenByAuthorizationCodeAsync(context.Code, new Uri(redirectUri), credential, context.Options.ClientId);
+                        string userEmail = context.AuthenticationTicket.Identity.Name;
+                        TokenHelper tokenHelper = new TokenHelper(new System.Net.Http.HttpClient(), ConfigurationManager.AppSettings["StorageConnectionString"], ConfigurationManager.AppSettings["ida:TenantId"], ConfigurationManager.AppSettings["GraphAppClientID"], ConfigurationManager.AppSettings["GraphAppSecret"], ConfigurationManager.AppSettings["TokenKey"]);
+
+                        return tokenHelper.SetSharePointUserAsync(userEmail, tokenResponse.Result.AccessToken);
+                    },
+
+                    RedirectToIdentityProvider = (context) =>
+                    {
+                        if (context.ProtocolMessage.RequestType == OpenIdConnectRequestType.Authentication)
+                        {
+                            context.ProtocolMessage.Prompt = OpenIdConnectPrompt.Login;
+                        }
+
+                        return Task.CompletedTask;
+                    }
+                }
+            });
             AntiForgeryConfig.UniqueClaimTypeIdentifier = ClaimTypes.Upn;
         }
 
