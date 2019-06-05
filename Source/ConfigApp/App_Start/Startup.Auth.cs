@@ -81,7 +81,7 @@ namespace ConfigApp
             app.UseOpenIdConnectAuthentication(new OpenIdConnectAuthenticationOptions(Constants.SharePointAppLoginAuthenticationType)
             {
                 AuthenticationMode = AuthenticationMode.Passive,
-                ClientId = ConfigurationManager.AppSettings["GraphAppClientID"],
+                ClientId = ConfigurationManager.AppSettings["GraphAppClientId"],
                 Authority = authority,
                 PostLogoutRedirectUri = postLogoutRedirectUri,
                 SignInAsAuthenticationType = Constants.SharePointAppLoginAuthenticationType,
@@ -94,7 +94,7 @@ namespace ConfigApp
                         var authContext = new AuthenticationContext(context.Options.Authority);
                         var tokenResponse = authContext.AcquireTokenByAuthorizationCodeAsync(context.Code, new Uri(redirectUri), credential, context.Options.ClientId);
                         string userEmail = context.AuthenticationTicket.Identity.Name;
-                        TokenHelper tokenHelper = new TokenHelper(new System.Net.Http.HttpClient(), ConfigurationManager.AppSettings["StorageConnectionString"], ConfigurationManager.AppSettings["ida:TenantId"], ConfigurationManager.AppSettings["GraphAppClientID"], ConfigurationManager.AppSettings["GraphAppSecret"], ConfigurationManager.AppSettings["TokenKey"]);
+                        TokenHelper tokenHelper = new TokenHelper(new System.Net.Http.HttpClient(), ConfigurationManager.AppSettings["StorageConnectionString"], ConfigurationManager.AppSettings["ida:TenantId"], ConfigurationManager.AppSettings["GraphAppClientId"], ConfigurationManager.AppSettings["GraphAppSecret"], ConfigurationManager.AppSettings["TokenKey"]);
 
                         return tokenHelper.SetSharePointUserAsync(userEmail, tokenResponse.Result.AccessToken);
                     },
