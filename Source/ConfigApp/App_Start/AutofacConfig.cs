@@ -23,7 +23,8 @@ namespace ConfigApp
         /// <summary>
         /// Register Autofac dependencies
         /// </summary>
-        public static void RegisterDependencies()
+        /// <returns>Autofac container</returns>
+        public static IContainer RegisterDependencies()
         {
             var builder = new ContainerBuilder();
             builder.RegisterControllers(Assembly.GetExecutingAssembly());
@@ -35,6 +36,10 @@ namespace ConfigApp
 
             builder.Register(c => new HttpClient())
                 .As<HttpClient>()
+                .SingleInstance();
+
+            builder.Register(c => new KBInfoHelper(ConfigurationManager.AppSettings["StorageConnectionString"]))
+                .As<KBInfoHelper>()
                 .SingleInstance();
 
             builder.Register(c => new TokenHelper(
@@ -49,7 +54,10 @@ namespace ConfigApp
 
             builder.RegisterType<HomeController>().InstancePerRequest();
 
-            DependencyResolver.SetResolver(new AutofacDependencyResolver(builder.Build()));
+            var container = builder.Build();
+            DependencyResolver.SetResolver(new AutofacDependencyResolver(container));
+
+            return container;
         }
     }
 }

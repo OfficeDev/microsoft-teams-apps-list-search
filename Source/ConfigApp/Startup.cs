@@ -2,6 +2,9 @@
 namespace ConfigApp
 {
     using Owin;
+    using System.Web.Mvc;
+    using System.Web.Optimization;
+    using System.Web.Routing;
 
     /// <summary>
     /// Startup
@@ -14,7 +17,13 @@ namespace ConfigApp
         /// <param name="app">IAppBuilder app</param>
         public void Configuration(IAppBuilder app)
         {
-            ConfigureAuth(app);
+            AreaRegistration.RegisterAllAreas();
+            FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
+            RouteConfig.RegisterRoutes(RouteTable.Routes);
+            BundleConfig.RegisterBundles(BundleTable.Bundles);
+
+            var container = AutofacConfig.RegisterDependencies();
+            ConfigureAuth(app, container);
         }
     }
 }

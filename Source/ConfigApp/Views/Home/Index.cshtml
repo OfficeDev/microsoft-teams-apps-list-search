@@ -1,4 +1,95 @@
-﻿@{
+﻿@using Lib.Models
+@using System.Globalization
+@{
     ViewBag.Title = "Home Page";
 }
-<h2>@ViewBag.Title</h2>
+
+@model HomeViewModel
+
+<div class="container">
+    <div>
+        <h2>Home</h2>
+    </div>
+    <br />
+    <div>
+        <div class="row">
+            <div class="col-xs-6">
+                <button type="button" id="addNewSharepointList" class="btn disableAction btnPurple" onclick="location.href='@Url.Action("ConfigureList", "Home")'">Add a new SharePoint list</button>
+            </div>
+            <div class="col-xs-4">
+                @if (Model.SharePointUserUpn == null)
+                {
+                    <script type="text/javascript">
+                        $(document).ready(function () {
+                            $(".disableAction").attr("disabled", true);
+                        })
+                    </script>
+                    <div>
+                        <input type="button" class="btn btnPurple" id="btnSetSharepointUser" value="Set SharePoint user" onclick="location.href='@Url.Action("LoginAsSharepointUser", "Home")'" />
+                    </div>
+                }
+                else
+                {
+                    <div>
+                        <label align="left">Access SharePoint as:</label>
+                        <div class="form-inline">
+                            <div class="form-group">
+                                <img src="~/Content/Images/userIcon.png" class="sharePointUserIcon" />
+                            </div>
+                            <div class="form-group" align="left">
+                                <label class="userEmail">@Model.SharePointUserUpn </label>
+                            </div>
+                            <div class="form-group">
+                                <a href="#" class="btn-link btn-sm" onclick="location.href='@Url.Action("LoginAsSharepointUser", "Home")'">Change</a>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+<br />
+<div class="container">
+    <div class="row">
+        <div class="col-xs-12 col-sm-12">
+            <div class="row">
+                <div class="col-sm-4">
+                    <label>SharePoint list</label>
+                </div>
+                <div class="col-sm-2">
+                    <label>Refresh frequency</label>
+                </div>
+                <div class="col-sm-2">
+                    <label>Last refreshed</label>
+                </div>
+                <div class="col-sm-1">
+                </div>
+                <div class="col-sm-1">
+                </div>
+            </div>
+            <hr />
+            @foreach (var kb in Model.KBList)
+            {
+                <div class="row">
+                    <div class="col-sm-4">
+                        <a class="text">@kb.KBName</a>
+                    </div>
+                    <div class="col-sm-2">
+                        <label class="fontUnset">@kb.RefreshFrequencyInHours hours</label>
+                    </div>
+                    <div class="col-sm-2">
+                        <label class="fontUnset">@kb.LastRefreshDateTime.ToString("g", CultureInfo.CurrentCulture)</label>
+                    </div>
+                    <div class="col-sm-1">
+                        <button class="btn btn-sm disableAction">Edit</button>
+                    </div>
+                    <div class="col-sm-1">
+                        <button class="btn btn-sm disableAction">Delete</button>
+                    </div>
+                </div>
+                <hr />
+            }
+        </div>
+    </div>
+</div>

@@ -9,6 +9,10 @@ namespace ConfigApp
     using System.Linq;
     using System.Threading.Tasks;
     using System.Web.Helpers;
+    using Autofac;
+    using Lib;
+    using Lib.Helpers;
+    using Microsoft.IdentityModel.Clients.ActiveDirectory;
     using Microsoft.IdentityModel.Protocols.OpenIdConnect;
     using Microsoft.Owin.Security;
     using Microsoft.Owin.Security.Cookies;
@@ -30,7 +34,8 @@ namespace ConfigApp
         /// Configure Auth
         /// </summary>
         /// <param name="app">App builder</param>
-        public void ConfigureAuth(IAppBuilder app)
+        /// <param name="container">DI container</param>
+        public void ConfigureAuth(IAppBuilder app, Autofac.IContainer container)
         {
             app.SetDefaultSignInAsAuthenticationType(CookieAuthenticationDefaults.AuthenticationType);
 
@@ -69,11 +74,45 @@ namespace ConfigApp
                         {
                             context.ProtocolMessage.Prompt = OpenIdConnectPrompt.Login;
                         }
+
                         return Task.CompletedTask;
                     }
                 }
             });
 
+            app.UseOpenIdConnectAuthentication(new OpenIdConnectAuthenticationOptions(Constants.SharePointAppLoginAuthenticationType)
+            {
+                AuthenticationMode = AuthenticationMode.Passive,
+                ClientId = ConfigurationManager.AppSettings["GraphAppClientId"],
+                Authority = authority,
+                PostLogoutRedirectUri = postLogoutRedirectUri,
+                SignInAsAuthenticationType = Constants.SharePointAppLoginAuthenticationType,
+                Notifications = new OpenIdConnectAuthenticationNotifications()
+                {
+                    AuthorizationCodeReceived = (context) =>
+                    {
+                        var authContext = new AuthenticationContext(context.Options.Authority);
+                        var redirectUri = new Uri(context.Request.Uri.GetLeftPart(UriPartial.Path));
+                        var credential = new ClientCredential(context.Options.ClientId, ConfigurationManager.AppSettings["GraphAppClientSecret"]);
+
+                        var tokenResponse = authContext.AcquireTokenByAuthorizationCodeAsync(context.Code, redirectUri, credential, context.Options.ClientId);
+
+                        var tokenHelper = container.Resolve<TokenHelper>();
+                        var upn = context.AuthenticationTicket.Identity.Name;
+                        return tokenHelper.SetSharePointUserAsync(upn, tokenResponse.Result.AccessToken);
+                    },
+
+                    RedirectToIdentityProvider = (context) =>
+                    {
+                        if (context.ProtocolMessage.RequestType == OpenIdConnectRequestType.Authentication)
+                        {
+                            context.ProtocolMessage.Prompt = OpenIdConnectPrompt.Login;
+                        }
+
+                        return Task.CompletedTask;
+                    }
+                }
+            });
             AntiForgeryConfig.UniqueClaimTypeIdentifier = ClaimTypes.Upn;
         }
 

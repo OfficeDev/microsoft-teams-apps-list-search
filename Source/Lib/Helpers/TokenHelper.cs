@@ -5,6 +5,7 @@
 namespace Lib.Helpers
 {
     using System;
+    using System.Collections.Generic;
     using System.IO;
     using System.Net.Http;
     using System.Security.Cryptography;
@@ -24,6 +25,7 @@ namespace Lib.Helpers
         private const string PartitionKey = "Token";
         private const string TokenTableName = StorageInfo.TokenTableName;
         private const double TokenExpiryAllowanceInMinutes = 5;
+        private const string Scope = "offline_access https://graph.microsoft.com/Sites.Read.All";
 
         private readonly CloudTableClient cloudTableClient;
         private readonly string tokenEndpoint;
@@ -60,7 +62,7 @@ namespace Lib.Helpers
         /// <returns><see cref="Task"/> that resolves to an access token</returns>
         public async Task<string> GetAccessTokenAsync(string tokenType)
         {
-            TokenEntity token = await this.GetTokenEntity(TokenTypes.GraphTokenType);
+            TokenEntity token = await this.GetTokenEntityAsync(TokenTypes.GraphTokenType);
             if (token.ExpiryDateTime.ToUniversalTime() < DateTime.UtcNow.AddMinutes(TokenExpiryAllowanceInMinutes))
             {
                 token = await this.RefreshTokenAsync(token);
@@ -69,36 +71,97 @@ namespace Lib.Helpers
             return this.DecryptToken(token.AccessToken, this.tokenKey);
         }
 
-        // Refresh the token
+        /// <summary>
+        /// To configure the user who have access to share point
+        /// </summary>
+        /// <param name="userEmail">logged in user email</param>
+        /// <param name="accessToken">Authorization code</param>
+        /// <returns>token status</returns>
+        public async Task<bool> SetSharePointUserAsync(string userEmail, string accessToken)
+        {
+            var content = new FormUrlEncodedContent(new[]
+                {
+                    new KeyValuePair<string, string>("grant_type", "urn:ietf:params:oauth:grant-type:jwt-bearer"),
+                    new KeyValuePair<string, string>("client_id", this.clientId),
+                    new KeyValuePair<string, string>("client_secret", this.clientSecret),
+                    new KeyValuePair<string, string>("assertion", accessToken),
+                    new KeyValuePair<string, string>("scope", Scope),
+                    new KeyValuePair<string, string>("requested_token_use", "on_behalf_of"),
+            });
+            using (var client = this.httpClient)
+            {
+                HttpResponseMessage res = await client.PostAsync(this.tokenEndpoint, content);
+                res.EnsureSuccessStatusCode();
+
+                string json = await res.Content.ReadAsStringAsync();
+                AzureADTokenResponse tokenResponse = JsonConvert.DeserializeObject<AzureADTokenResponse>(json);
+                TokenEntity tokenEntity = new TokenEntity()
+                {
+                    PartitionKey = PartitionKey,
+                    RowKey = TokenTypes.GraphTokenType,
+                    AccessToken = this.EncryptToken(tokenResponse.AccessToken, this.tokenKey),
+                    RefreshToken = this.EncryptToken(tokenResponse.RefreshToken, this.tokenKey),
+                    Scopes = Scope,
+                    UserPrincipalName = userEmail,
+                    ExpiryDateTime = DateTime.UtcNow.AddSeconds(tokenResponse.ExpiresIn),
+                };
+
+                var result = await this.StoreTokenEntityAsync(tokenEntity);
+                if (result.HttpStatusCode != (int)System.Net.HttpStatusCode.NoContent)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Gets token from storage.
+        /// </summary>
+        /// <param name="tokenType">type of token to be retrieved.</param>
+        /// <returns>TokenEntity</returns>
+        public async Task<TokenEntity> GetTokenEntityAsync(string tokenType)
+        {
+            CloudTable cloudTable = this.cloudTableClient.GetTableReference(TokenTableName);
+            TableOperation retrieveOperation = TableOperation.Retrieve<TokenEntity>(PartitionKey, tokenType);
+            TableResult retrievedResult = await cloudTable.ExecuteAsync(retrieveOperation);
+
+            return (TokenEntity)retrievedResult.Result;
+        }
+
+        /// <summary>
+        /// Refresh the token
+        /// </summary>
+        /// <param name="token">Token Entity</param>
+        /// <returns>returns refresh token entity</returns>
         private async Task<TokenEntity> RefreshTokenAsync(TokenEntity token)
         {
-            string body = $"&client_id={this.clientId}" +
-                $"&scope={Uri.EscapeDataString(token.Scopes)}" +
-                $"&refresh_token={Uri.EscapeDataString(this.DecryptToken(token.RefreshToken, this.tokenKey))}" +
-                $"&grant_type={RefreshTokenGrantType}" +
-                $"&client_secret={Uri.EscapeDataString(this.clientSecret)}";
+            var body = new FormUrlEncodedContent(new[]
+                {
+                    new KeyValuePair<string, string>("grant_type", RefreshTokenGrantType),
+                    new KeyValuePair<string, string>("client_id", this.clientId),
+                    new KeyValuePair<string, string>("client_secret", this.clientSecret),
+                    new KeyValuePair<string, string>("refresh_token", this.DecryptToken(token.RefreshToken, this.tokenKey)),
+                    new KeyValuePair<string, string>("scope", token.Scopes),
+            });
 
-            var request = new HttpRequestMessage(HttpMethod.Post, this.tokenEndpoint)
-            {
-                Content = new StringContent(body, Encoding.UTF8, "application/x-www-form-urlencoded")
-            };
-
-            var response = await this.httpClient.SendAsync(request);
+            var response = await this.httpClient.PostAsync(this.tokenEndpoint, body);
             string responseBody = await response.Content.ReadAsStringAsync();
-            var refreshTokenResponse = JsonConvert.DeserializeObject<RefreshTokenResponse>(responseBody);
+            var tokenResponse = JsonConvert.DeserializeObject<AzureADTokenResponse>(responseBody);
 
             TokenEntity tokenEntity = new TokenEntity()
             {
                 PartitionKey = PartitionKey,
                 RowKey = token.TokenType,
-                AccessToken = this.EncryptToken(refreshTokenResponse.AccessToken, this.tokenKey),
-                RefreshToken = this.EncryptToken(refreshTokenResponse.RefreshToken, this.tokenKey),
+                AccessToken = this.EncryptToken(tokenResponse.AccessToken, this.tokenKey),
+                RefreshToken = this.EncryptToken(tokenResponse.RefreshToken, this.tokenKey),
                 Scopes = token.Scopes,
                 UserPrincipalName = token.UserPrincipalName,
-                ExpiryDateTime = DateTime.UtcNow.AddSeconds(refreshTokenResponse.ExpiresIn),
+                ExpiryDateTime = DateTime.UtcNow.AddSeconds(tokenResponse.ExpiresIn),
             };
 
-            var storeTokenResponse = await this.StoreTokenEntity(tokenEntity);
+            var storeTokenResponse = await this.StoreTokenEntityAsync(tokenEntity);
             if (storeTokenResponse.HttpStatusCode == (int)System.Net.HttpStatusCode.NoContent)
             {
                 return tokenEntity;
@@ -110,25 +173,11 @@ namespace Lib.Helpers
         }
 
         /// <summary>
-        /// Gets token from storage.
-        /// </summary>
-        /// <param name="tokenType">type of token to be retrieved.</param>
-        /// <returns>TokenEntity</returns>
-        private async Task<TokenEntity> GetTokenEntity(string tokenType)
-        {
-            CloudTable cloudTable = this.cloudTableClient.GetTableReference(TokenTableName);
-            TableOperation retrieveOperation = TableOperation.Retrieve<TokenEntity>(PartitionKey, tokenType);
-            TableResult retrievedResult = await cloudTable.ExecuteAsync(retrieveOperation);
-            TokenEntity result = (TokenEntity)retrievedResult.Result;
-            return result;
-        }
-
-        /// <summary>
         /// Stores token to storage.
         /// </summary>
         /// <param name="tokenEntity">entity to be stored.</param>
         /// <returns><see cref="Task"/> that resolves to <see cref="TableResult"/></returns>
-        private Task<TableResult> StoreTokenEntity(TokenEntity tokenEntity)
+        private Task<TableResult> StoreTokenEntityAsync(TokenEntity tokenEntity)
         {
             CloudTable cloudTable = this.cloudTableClient.GetTableReference(TokenTableName);
             TableOperation insertOperation = TableOperation.InsertOrMerge(tokenEntity);
