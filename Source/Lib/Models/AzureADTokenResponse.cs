@@ -1,4 +1,4 @@
-﻿// <copyright file="RefreshTokenResponse.cs" company="Microsoft">
+﻿// <copyright file="AzureADTokenResponse.cs" company="Microsoft">
 // Copyright (c) Microsoft. All rights reserved.
 // </copyright>
 
@@ -9,7 +9,7 @@ namespace Lib.Models
     /// <summary>
     /// Refresh Token Response.
     /// </summary>
-    public class RefreshTokenResponse
+    public class AzureADTokenResponse
     {
         /// <summary>
         /// Gets or sets Token Type.

@@ -26,6 +26,7 @@ namespace Lib.Helpers
         private const string TokenTableName = StorageInfo.TokenTableName;
         private const double TokenExpiryAllowanceInMinutes = 5;
         private const string Scope = "offline_access https://graph.microsoft.com/Sites.Read.All";
+
         private readonly CloudTableClient cloudTableClient;
         private readonly string tokenEndpoint;
         private readonly HttpClient httpClient;
@@ -87,21 +88,21 @@ namespace Lib.Helpers
                     new KeyValuePair<string, string>("scope", Scope),
                     new KeyValuePair<string, string>("requested_token_use", "on_behalf_of"),
             });
-            using (var client = new HttpClient())
+            using (var client = this.httpClient)
             {
                 HttpResponseMessage res = await client.PostAsync(this.tokenEndpoint, content);
                 res.EnsureSuccessStatusCode();
                 string json = await res.Content.ReadAsStringAsync();
-                RefreshTokenResponse refreshTokenResponse = JsonConvert.DeserializeObject<RefreshTokenResponse>(json);
+                AzureADTokenResponse tokenResponse = JsonConvert.DeserializeObject<AzureADTokenResponse>(json);
                 TokenEntity tokenEntity = new TokenEntity()
                 {
                     PartitionKey = PartitionKey,
                     RowKey = TokenTypes.GraphTokenType,
-                    AccessToken = this.EncryptToken(refreshTokenResponse.AccessToken, this.tokenKey),
-                    RefreshToken = this.EncryptToken(refreshTokenResponse.RefreshToken, this.tokenKey),
+                    AccessToken = this.EncryptToken(tokenResponse.AccessToken, this.tokenKey),
+                    RefreshToken = this.EncryptToken(tokenResponse.RefreshToken, this.tokenKey),
                     Scopes = Scope,
                     UserPrincipalName = userEmail,
-                    ExpiryDateTime = DateTime.UtcNow.AddSeconds(refreshTokenResponse.ExpiresIn),
+                    ExpiryDateTime = DateTime.UtcNow.AddSeconds(tokenResponse.ExpiresIn),
                 };
 
                 var result = await this.StoreTokenEntity(tokenEntity);
@@ -146,17 +147,17 @@ namespace Lib.Helpers
 
             var response = await this.httpClient.PostAsync(this.tokenEndpoint, body);
             string responseBody = await response.Content.ReadAsStringAsync();
-            var refreshTokenResponse = JsonConvert.DeserializeObject<RefreshTokenResponse>(responseBody);
+            var tokenResponse = JsonConvert.DeserializeObject<AzureADTokenResponse>(responseBody);
 
             TokenEntity tokenEntity = new TokenEntity()
             {
                 PartitionKey = PartitionKey,
                 RowKey = token.TokenType,
-                AccessToken = this.EncryptToken(refreshTokenResponse.AccessToken, this.tokenKey),
-                RefreshToken = this.EncryptToken(refreshTokenResponse.RefreshToken, this.tokenKey),
+                AccessToken = this.EncryptToken(tokenResponse.AccessToken, this.tokenKey),
+                RefreshToken = this.EncryptToken(tokenResponse.RefreshToken, this.tokenKey),
                 Scopes = token.Scopes,
                 UserPrincipalName = token.UserPrincipalName,
-                ExpiryDateTime = DateTime.UtcNow.AddSeconds(refreshTokenResponse.ExpiresIn),
+                ExpiryDateTime = DateTime.UtcNow.AddSeconds(tokenResponse.ExpiresIn),
             };
 
             var storeTokenResponse = await this.StoreTokenEntity(tokenEntity);

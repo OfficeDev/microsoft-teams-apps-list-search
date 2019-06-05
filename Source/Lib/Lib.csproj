@@ -86,12 +86,13 @@
     <Compile Include="Models\File.cs" />
     <Compile Include="Models\GetKnowledgeBaseDetailsResponse.cs" />
     <Compile Include="Models\GetListContentsResponse.cs" />
+    <Compile Include="Models\HomeViewModel.cs" />
     <Compile Include="Models\JWTExceptions.cs" />
     <Compile Include="Models\KBInfo.cs" />
     <Compile Include="Models\QnAMakerEndpointResponse.cs" />
     <Compile Include="Models\QnAMakerOperationStates.cs" />
     <Compile Include="Models\QnAMakerResponse.cs" />
-    <Compile Include="Models\RefreshTokenResponse.cs" />
+    <Compile Include="Models\AzureADTokenResponse.cs" />
     <Compile Include="Models\SelectedSearchResult.cs" />
     <Compile Include="Models\GenerateAnswerRequest.cs" />
     <Compile Include="Models\GenerateAnswerResponse.cs" />

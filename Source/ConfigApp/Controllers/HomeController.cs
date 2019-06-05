@@ -30,12 +30,12 @@ namespace ConfigApp.Controllers
         /// </summary>
         /// <param name="httpClient">Http client to be used.</param>
         /// <param name="tokenHelper">Token Helper.</param>
-        public HomeController(HttpClient httpClient, TokenHelper tokenHelper)
+        /// <param name="kbInfoHelper">Knowledge base helper</param>
+        public HomeController(HttpClient httpClient, TokenHelper tokenHelper, KBInfoHelper kbInfoHelper)
         {
-            var connectionString = ConfigurationManager.AppSettings["StorageConnectionString"];
             this.httpClient = httpClient;
             this.tokenHelper = tokenHelper;
-            this.kbInfoHelper = new KBInfoHelper(connectionString);
+            this.kbInfoHelper = kbInfoHelper;
         }
 
         /// <summary>
@@ -63,20 +63,9 @@ namespace ConfigApp.Controllers
         /// Get the Kb Info And User for home page
         /// </summary>
         /// <returns> kb info</returns>
-        private async Task<List<KBInfo>> GetKbInfoAndSharepointUserAsync()
+        private async Task<HomeViewModel> GetKbInfoAndSharepointUserAsync()
         {
-            string connectionString = ConfigurationManager.AppSettings["StorageConnectionString"];
-
             TokenEntity tokenEntity = await this.tokenHelper.GetTokenEntity(TokenTypes.GraphTokenType);
-            if (tokenEntity != null)
-            {
-                this.ViewBag.Email = tokenEntity.UserPrincipalName;
-                this.ViewBag.IsSharepointUserConfigured = true;
-            }
-            else
-            {
-                this.ViewBag.IsSharepointUserConfigured = false;
-            }
 
             List<KBInfo> kbList = await this.kbInfoHelper.GetAllKBs(
                fields: new string[]
@@ -91,7 +80,12 @@ namespace ConfigApp.Controllers
                     nameof(KBInfo.SharePointSiteId),
                     nameof(KBInfo.LastRefreshAttemptError)
                });
-            return kbList;
+
+            return new HomeViewModel()
+            {
+                KBList = kbList,
+                SharePointUserUpn = tokenEntity.UserPrincipalName,
+            };
         }
     }
 }

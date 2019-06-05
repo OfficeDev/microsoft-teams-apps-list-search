@@ -40,6 +40,10 @@ namespace ConfigApp
                 .As<TokenHelper>()
                 .SingleInstance();
 
+            builder.Register(c => new KBInfoHelper(ConfigurationManager.AppSettings["StorageConnectionString"]))
+              .As<KBInfoHelper>()
+              .SingleInstance();
+
             builder.RegisterType<HomeController>().InstancePerRequest();
 
             DependencyResolver.SetResolver(new AutofacDependencyResolver(builder.Build()));

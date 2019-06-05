@@ -67,36 +67,6 @@ input[type="radio"] {
     margin-left: -20px;
 }
 
-
-#notification {
-    position: fixed;
-    top: 53px;
-    right: 5px;
-    z-index: 1000;
-    width: 30%;
-    text-align: left;
-    font-weight: normal;
-    font-size: 13px;
-    color: white;
-    background-color: grey;
-    padding: 5px;
-    border-radius: 7px;
-}
-
-    #notification span.dismiss {
-        border: 1px solid #FFF;
-        padding: 0 5px;
-        cursor: pointer;
-        float: right;
-        border-radius: 7px;
-    }
-
-    #notification a {
-        color: white;
-        text-decoration: none;
-        font-weight: bold
-    }
-
 .loader {
     position: absolute;
     z-index: 9999;
