@@ -64,8 +64,9 @@ namespace Lib.Helpers
                 throw new InvalidOperationException($"{nameof(this.GenerateAnswerAsync)} was called on an instance of {nameof(QnAMakerService)} with no host url provided");
             }
 
+            await this.EnsureQnAMakerEndpointKeyAsync();
+
             string uri = $"{this.hostUrl}/qnamaker/{MethodKB}/{kbId}/generateAnswer";
-            await this.FetchQnAMakerEndpointKey();
             using (var httpRequest = new HttpRequestMessage(HttpMethod.Post, uri))
             {
                 httpRequest.Content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
@@ -113,7 +114,7 @@ namespace Lib.Helpers
         public async Task<QnAMakerResponse> CreateKB(CreateKBRequest body)
         {
             var uri = $"{QnAMakerRequestUrl}/{MethodKB}/create";
-            using (HttpRequestMessage httpRequest = new HttpRequestMessage(HttpMethod.Post, uri))
+            using (var httpRequest = new HttpRequestMessage(HttpMethod.Post, uri))
             {
                 httpRequest.Content = new StringContent(JsonConvert.SerializeObject(body), Encoding.UTF8, "application/json");
                 httpRequest.Headers.Add(Constants.OcpApimSubscriptionKey, this.subscriptionKey);
@@ -129,7 +130,7 @@ namespace Lib.Helpers
         public async Task<bool> DeleteKB(string kbId)
         {
             var uri = $"{QnAMakerRequestUrl}/{MethodKB}/{kbId}";
-            using (HttpRequestMessage httpRequest = new HttpRequestMessage(HttpMethod.Delete, uri))
+            using (var httpRequest = new HttpRequestMessage(HttpMethod.Delete, uri))
             {
                 httpRequest.Headers.Add(Constants.OcpApimSubscriptionKey, this.subscriptionKey);
 
@@ -144,7 +145,7 @@ namespace Lib.Helpers
         public async Task<QnAMakerResponse> GetOperationDetails(string operationId)
         {
             var uri = $"{QnAMakerRequestUrl}/{MethodOperation}/{operationId}";
-            using (HttpRequestMessage httpRequest = new HttpRequestMessage(HttpMethod.Get, uri))
+            using (var httpRequest = new HttpRequestMessage(HttpMethod.Get, uri))
             {
                 httpRequest.Headers.Add(Constants.OcpApimSubscriptionKey, this.subscriptionKey);
 
@@ -159,7 +160,7 @@ namespace Lib.Helpers
         public async Task<GetKnowledgeBaseDetailsResponse> GetKnowledgeBaseDetails(string kbId)
         {
             var uri = $"{QnAMakerRequestUrl}/{MethodKB}/{kbId}";
-            using (HttpRequestMessage httpRequest = new HttpRequestMessage(HttpMethod.Get, uri))
+            using (var httpRequest = new HttpRequestMessage(HttpMethod.Get, uri))
             {
                 httpRequest.Headers.Add(Constants.OcpApimSubscriptionKey, this.subscriptionKey);
 
@@ -219,7 +220,7 @@ namespace Lib.Helpers
             }
             else
             {
-                StringBuilder details = new StringBuilder();
+                var details = new StringBuilder();
                 foreach (var detail in response.ErrorResponse.Error.Details)
                 {
                     details.AppendLine(detail.Message);
@@ -230,22 +231,23 @@ namespace Lib.Helpers
         }
 
         /// <summary>
-        /// Description : Get and return the QnAMaker end point key
+        /// Ensure that we have the QnAMaker endpoint key
         /// </summary>
-        /// <returns> representing the asynchronous operation.</returns>
-        private async Task FetchQnAMakerEndpointKey()
+        /// <returns>Task representing the asynchronous operation.</returns>
+        private async Task EnsureQnAMakerEndpointKeyAsync()
         {
             if (string.IsNullOrEmpty(this.endpointKey))
             {
                 string endpointKeyUrl = $"{QnAMakerRequestUrl}/endpointkeys";
 
-                using (HttpRequestMessage httpRequest = new HttpRequestMessage(HttpMethod.Get, endpointKeyUrl))
+                using (var httpRequest = new HttpRequestMessage(HttpMethod.Get, endpointKeyUrl))
                 {
                     httpRequest.Headers.Add(Constants.OcpApimSubscriptionKey, this.subscriptionKey);
 
                     var response = await this.httpClient.SendAsync(httpRequest);
                     response.EnsureSuccessStatusCode();
-                    QnAMakerEndpointResponse qnaMakerEndpointResponse = JsonConvert.DeserializeObject<QnAMakerEndpointResponse>(await response.Content.ReadAsStringAsync());
+
+                    var qnaMakerEndpointResponse = JsonConvert.DeserializeObject<QnAMakerEndpointResponse>(await response.Content.ReadAsStringAsync());
                     this.endpointKey = qnaMakerEndpointResponse.PrimaryEndpointKey;
                 }
             }
