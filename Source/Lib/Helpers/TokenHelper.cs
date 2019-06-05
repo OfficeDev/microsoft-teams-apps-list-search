@@ -103,7 +103,12 @@ namespace Lib.Helpers
                     UserPrincipalName = userEmail,
                     ExpiryDateTime = DateTime.UtcNow.AddSeconds(refreshTokenResponse.ExpiresIn),
                 };
-                await this.StoreTokenEntity(tokenEntity);
+
+                var result = await this.StoreTokenEntity(tokenEntity);
+                if (result == null)
+                {
+                    return false;
+                }
 
                 return true;
             }
@@ -119,9 +124,8 @@ namespace Lib.Helpers
             CloudTable cloudTable = this.cloudTableClient.GetTableReference(TokenTableName);
             TableOperation retrieveOperation = TableOperation.Retrieve<TokenEntity>(PartitionKey, tokenType);
             TableResult retrievedResult = await cloudTable.ExecuteAsync(retrieveOperation);
-            TokenEntity result = (TokenEntity)retrievedResult.Result;
 
-            return result;
+            return (TokenEntity)retrievedResult.Result;
         }
 
         /// <summary>
@@ -140,7 +144,7 @@ namespace Lib.Helpers
                     new KeyValuePair<string, string>("scope", token.Scopes),
             });
 
-            var response = await this.httpClient.PostAsync(this.tokenEndpoint,body);
+            var response = await this.httpClient.PostAsync(this.tokenEndpoint, body);
             string responseBody = await response.Content.ReadAsStringAsync();
             var refreshTokenResponse = JsonConvert.DeserializeObject<RefreshTokenResponse>(responseBody);
 
