@@ -1,6 +1,7 @@
 ﻿// <copyright file="AutofacConfig.cs" company="Microsoft">
 // Copyright (c) Microsoft. All rights reserved.
 // </copyright>
+
 namespace ConfigApp
 {
     using System.Configuration;

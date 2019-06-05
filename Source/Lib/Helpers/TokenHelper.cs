@@ -62,7 +62,7 @@ namespace Lib.Helpers
         /// <returns><see cref="Task"/> that resolves to an access token</returns>
         public async Task<string> GetAccessTokenAsync(string tokenType)
         {
-            TokenEntity token = await this.GetTokenEntity(TokenTypes.GraphTokenType);
+            TokenEntity token = await this.GetTokenEntityAsync(TokenTypes.GraphTokenType);
             if (token.ExpiryDateTime.ToUniversalTime() < DateTime.UtcNow.AddMinutes(TokenExpiryAllowanceInMinutes))
             {
                 token = await this.RefreshTokenAsync(token);
@@ -92,6 +92,7 @@ namespace Lib.Helpers
             {
                 HttpResponseMessage res = await client.PostAsync(this.tokenEndpoint, content);
                 res.EnsureSuccessStatusCode();
+
                 string json = await res.Content.ReadAsStringAsync();
                 AzureADTokenResponse tokenResponse = JsonConvert.DeserializeObject<AzureADTokenResponse>(json);
                 TokenEntity tokenEntity = new TokenEntity()
@@ -105,8 +106,8 @@ namespace Lib.Helpers
                     ExpiryDateTime = DateTime.UtcNow.AddSeconds(tokenResponse.ExpiresIn),
                 };
 
-                var result = await this.StoreTokenEntity(tokenEntity);
-                if (result == null)
+                var result = await this.StoreTokenEntityAsync(tokenEntity);
+                if (result.HttpStatusCode != (int)System.Net.HttpStatusCode.NoContent)
                 {
                     return false;
                 }
@@ -120,7 +121,7 @@ namespace Lib.Helpers
         /// </summary>
         /// <param name="tokenType">type of token to be retrieved.</param>
         /// <returns>TokenEntity</returns>
-        public async Task<TokenEntity> GetTokenEntity(string tokenType)
+        public async Task<TokenEntity> GetTokenEntityAsync(string tokenType)
         {
             CloudTable cloudTable = this.cloudTableClient.GetTableReference(TokenTableName);
             TableOperation retrieveOperation = TableOperation.Retrieve<TokenEntity>(PartitionKey, tokenType);
@@ -160,7 +161,7 @@ namespace Lib.Helpers
                 ExpiryDateTime = DateTime.UtcNow.AddSeconds(tokenResponse.ExpiresIn),
             };
 
-            var storeTokenResponse = await this.StoreTokenEntity(tokenEntity);
+            var storeTokenResponse = await this.StoreTokenEntityAsync(tokenEntity);
             if (storeTokenResponse.HttpStatusCode == (int)System.Net.HttpStatusCode.NoContent)
             {
                 return tokenEntity;
@@ -176,11 +177,10 @@ namespace Lib.Helpers
         /// </summary>
         /// <param name="tokenEntity">entity to be stored.</param>
         /// <returns><see cref="Task"/> that resolves to <see cref="TableResult"/></returns>
-        private Task<TableResult> StoreTokenEntity(TokenEntity tokenEntity)
+        private Task<TableResult> StoreTokenEntityAsync(TokenEntity tokenEntity)
         {
             CloudTable cloudTable = this.cloudTableClient.GetTableReference(TokenTableName);
             TableOperation insertOperation = TableOperation.InsertOrMerge(tokenEntity);
-
             return cloudTable.ExecuteAsync(insertOperation);
         }
 

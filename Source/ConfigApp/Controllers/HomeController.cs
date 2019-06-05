@@ -65,7 +65,7 @@ namespace ConfigApp.Controllers
         /// <returns> kb info</returns>
         private async Task<HomeViewModel> GetKbInfoAndSharepointUserAsync()
         {
-            TokenEntity tokenEntity = await this.tokenHelper.GetTokenEntity(TokenTypes.GraphTokenType);
+            TokenEntity tokenEntity = await this.tokenHelper.GetTokenEntityAsync(TokenTypes.GraphTokenType);
 
             List<KBInfo> kbList = await this.kbInfoHelper.GetAllKBs(
                fields: new string[]
