@@ -49,31 +49,42 @@ namespace Lib.Helpers
         /// <returns>Tracking task</returns>
         public async Task RefreshKnowledgeBaseAsync(KBInfo kb)
         {
-            ColumnInfo questionColumn = JsonConvert.DeserializeObject<ColumnInfo>(kb.QuestionField);
-            Dictionary<string, Uri> blobInfoTemp = new Dictionary<string, Uri>();
-            GetListContentsResponse listContents = null;
+            kb.LastRefreshAttemptDateTime = DateTime.UtcNow;
 
-            do
+            try
             {
-                string blobName = Guid.NewGuid().ToString() + JsonFileExtension;
+                ColumnInfo questionColumn = JsonConvert.DeserializeObject<ColumnInfo>(kb.QuestionField);
+                Dictionary<string, Uri> blobInfoTemp = new Dictionary<string, Uri>();
+                GetListContentsResponse listContents = null;
 
-                listContents = await this.GetListContents(kb.SharePointListId, kb.AnswerFields, questionColumn.Name, kb.SharePointSiteId, listContents?.ODataNextLink ?? null);
+                do
+                {
+                    string blobName = Guid.NewGuid().ToString() + JsonFileExtension;
 
-                string blobUrl = await this.blobHelper.UploadBlobAsync(JsonConvert.SerializeObject(listContents), blobName);
-                blobInfoTemp.Add(blobName, new Uri(blobUrl));
+                    listContents = await this.GetListContents(kb.SharePointListId, kb.AnswerFields, questionColumn.Name, kb.SharePointSiteId, listContents?.ODataNextLink ?? null);
+
+                    string blobUrl = await this.blobHelper.UploadBlobAsync(JsonConvert.SerializeObject(listContents), blobName);
+                    blobInfoTemp.Add(blobName, new Uri(blobUrl));
+                }
+                while (!string.IsNullOrEmpty(listContents.ODataNextLink));
+
+                await this.UpdateKnowledgeBaseAsync(kb.KBId, blobInfoTemp, JsonConvert.DeserializeObject<ColumnInfo>(kb.QuestionField).Name, this.blobHelper);
+
+                // Delete all existing blobs for this KB
+                foreach (string blobName in blobInfoTemp.Keys)
+                {
+                    await this.blobHelper.DeleteBlobAsync(blobName);
+                }
+
+                kb.LastRefreshDateTime = DateTime.UtcNow;
+                kb.LastRefreshAttemptError = null;
+                await this.kbInfoHelper.InsertOrMergeKBInfo(kb);
             }
-            while (!string.IsNullOrEmpty(listContents.ODataNextLink));
-
-            await this.UpdateKnowledgeBaseAsync(kb.KBId, blobInfoTemp, JsonConvert.DeserializeObject<ColumnInfo>(kb.QuestionField).Name, this.blobHelper);
-
-            // Delete all existing blobs for this KB
-            foreach (string blobName in blobInfoTemp.Keys)
+            catch (Exception ex)
             {
-                await this.blobHelper.DeleteBlobAsync(blobName);
+                kb.LastRefreshAttemptError = ex.ToString();
+                await this.kbInfoHelper.InsertOrMergeKBInfo(kb);
             }
-
-            kb.LastRefreshDateTime = DateTime.UtcNow;
-            await this.kbInfoHelper.InsertOrMergeKBInfo(kb);
         }
 
         /// <summary>
