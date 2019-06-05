@@ -27,7 +27,7 @@ namespace Lib.Models
         /// Gets or sets Expires In.
         /// </summary>
         [JsonProperty("expires_in")]
-        public string ExpiresIn { get; set; }
+        public double ExpiresIn { get; set; }
 
         /// <summary>
         /// Gets or sets Ext Expires In.

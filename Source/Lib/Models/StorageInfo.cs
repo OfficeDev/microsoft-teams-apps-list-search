@@ -12,21 +12,21 @@ namespace Lib.Models
         /// <summary>
         /// Config Table
         /// </summary>
-        public static readonly string ConfigTableName = "Config";
+        public const string ConfigTableName = "Config";
 
         /// <summary>
         /// KB Info Table
         /// </summary>
-        public static readonly string KBInfoTableName = "KBInfo";
+        public const string KBInfoTableName = "KBInfo";
 
         /// <summary>
         /// Token Table
         /// </summary>
-        public static readonly string TokenTableName = "Token";
+        public const string TokenTableName = "Token";
 
         /// <summary>
         /// Blob Container
         /// </summary>
-        public static readonly string BlobContainerName = "list-search-blob";
+        public const string BlobContainerName = "list-search-blob";
     }
 }
