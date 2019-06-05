@@ -49,10 +49,6 @@
                             </div>
                         </div>
                     </div>
-
-                    <div align="left">
-
-                    </div>
                 }
             </div>
         </div>
@@ -89,7 +85,7 @@
                         <label class="fontUnset">@kb.RefreshFrequencyInHours hours</label>
                     </div>
                     <div class="col-sm-2">
-                        <label class="fontUnset">@kb.LastRefreshDateTime.ToString("g", CultureInfo.CreateSpecificCulture("en-us"))</label>
+                        <label class="fontUnset">@kb.LastRefreshDateTime.ToString("g", CultureInfo.CurrentCulture)</label>
                     </div>
                     <div class="col-sm-1">
                         <button class="btn btn-sm disableAction">Edit</button>

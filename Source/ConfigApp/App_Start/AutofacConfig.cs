@@ -1,7 +1,6 @@
 ﻿// <copyright file="AutofacConfig.cs" company="Microsoft">
 // Copyright (c) Microsoft. All rights reserved.
 // </copyright>
-
 namespace ConfigApp
 {
     using System.Configuration;
@@ -31,6 +30,10 @@ namespace ConfigApp
                 .As<HttpClient>()
                 .SingleInstance();
 
+            builder.Register(c => new KBInfoHelper(ConfigurationManager.AppSettings["StorageConnectionString"]))
+                .As<KBInfoHelper>()
+                .SingleInstance();
+
             builder.Register(c => new TokenHelper(
                 c.Resolve<HttpClient>(),
                 ConfigurationManager.AppSettings["StorageConnectionString"],
@@ -40,10 +43,6 @@ namespace ConfigApp
                 ConfigurationManager.AppSettings["TokenKey"]))
                 .As<TokenHelper>()
                 .SingleInstance();
-
-            builder.Register(c => new KBInfoHelper(ConfigurationManager.AppSettings["StorageConnectionString"]))
-              .As<KBInfoHelper>()
-              .SingleInstance();
 
             builder.RegisterType<HomeController>().InstancePerRequest();
 
