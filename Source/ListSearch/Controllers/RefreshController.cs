@@ -128,8 +128,8 @@ namespace ListSearch.Controllers
                 throw new ArgumentException($"{nameof(kbId)} must not be null or whitespace");
             }
 
-            QnAMakerService qnAMakerService = new QnAMakerService(kbId, this.subscriptionKey, this.httpClient);
-            bool deleteSourcesResult = await this.DeleteExistingSources(qnAMakerService);
+            QnAMakerService qnAMakerService = new QnAMakerService(this.httpClient, this.subscriptionKey);
+            bool deleteSourcesResult = await this.DeleteExistingSources(qnAMakerService, kbId);
             bool addSourcesResult = true;
 
             // Less than 10 files
@@ -177,7 +177,7 @@ namespace ListSearch.Controllers
             // if delete or any of the updates fails, KB is not published. Retry on next refresh.
             if (addSourcesResult && deleteSourcesResult)
             {
-                await qnAMakerService.PublishKB();
+                await qnAMakerService.PublishKB(kbId);
             }
         }
 
@@ -185,10 +185,11 @@ namespace ListSearch.Controllers
         /// Deletes sources from KB
         /// </summary>
         /// <param name="qnAMakerService">instance qna maker service</param>
+        /// <param name="kbId">Knowledge base ID</param>
         /// <returns><see cref="Task"/> that resolves to a <see cref="bool"/> which represents success or failure of operation.</returns>
-        private async Task<bool> DeleteExistingSources(QnAMakerService qnAMakerService)
+        private async Task<bool> DeleteExistingSources(QnAMakerService qnAMakerService, string kbId)
         {
-            GetKnowledgeBaseDetailsResponse kbDetails = await qnAMakerService.GetKnowledgeBaseDetails();
+            GetKnowledgeBaseDetailsResponse kbDetails = await qnAMakerService.GetKnowledgeBaseDetails(kbId);
 
             UpdateKBRequest deleteSourcesRequest = new UpdateKBRequest()
             {
@@ -197,8 +198,9 @@ namespace ListSearch.Controllers
                     Sources = kbDetails.Sources
                 }
             };
-            QnAMakerResponse deleteSourcesResult = await qnAMakerService.UpdateKB(deleteSourcesRequest);
+            QnAMakerResponse deleteSourcesResult = await qnAMakerService.UpdateKB(kbId, deleteSourcesRequest);
             string deleteSourcesResultState = await qnAMakerService.AwaitOperationCompletionState(deleteSourcesResult);
+
             return qnAMakerService.IsOperationSuccessful(deleteSourcesResultState);
         }
 
@@ -238,8 +240,9 @@ namespace ListSearch.Controllers
                 }
             };
 
-            QnAMakerResponse addSourcesResult = await qnAMakerService.UpdateKB(addSourcesRequest);
+            QnAMakerResponse addSourcesResult = await qnAMakerService.UpdateKB(kbId, addSourcesRequest);
             string addSourcesResultState = await qnAMakerService.AwaitOperationCompletionState(addSourcesResult);
+
             return qnAMakerService.IsOperationSuccessful(addSourcesResultState);
         }
 

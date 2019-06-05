@@ -29,11 +29,6 @@ namespace Lib.Helpers
         private readonly string hostUrl;
 
         /// <summary>
-        /// Id of KB to be queried.
-        /// </summary>
-        private readonly string kbId;
-
-        /// <summary>
         /// Ocp-Apim-Subscription-Key for the QnA Maker service
         /// </summary>
         private readonly string subscriptionKey;
@@ -50,44 +45,26 @@ namespace Lib.Helpers
 
         /// <summary>
         /// Initializes a new instance of the <see cref="QnAMakerService"/> class.
-        /// This constructor initializes an instance meant for GenerateAnswerAsync method.
         /// </summary>
         /// <param name="httpClient">HttpClient for generating http requests</param>
-        public QnAMakerService(HttpClient httpClient)
-        {
-            this.httpClient = httpClient;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="QnAMakerService"/> class.
-        /// This constructor initializes an instance meant for Update, Publish and GetOperation APIs.
-        /// </summary>
-        /// <param name="kbId">Id of the KB to be queried</param>
         /// <param name="subscriptionKey">Ocp-Apim-Subscription-Key for the QnA Maker service</param>
-        /// <param name="httpClient">Http Client to be used.</param>
-        public QnAMakerService(string kbId, string subscriptionKey, HttpClient httpClient)
+        /// <param name="hostUrl">QnA Maker service host URL</param>
+        public QnAMakerService(HttpClient httpClient, string subscriptionKey, string hostUrl = null)
         {
-            this.kbId = kbId;
-            this.subscriptionKey = subscriptionKey;
             this.httpClient = httpClient;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="QnAMakerService"/> class.
-        /// This constructor initializes an instance meant for Create API.
-        /// </summary>
-        /// <param name="subscriptionKey">Ocp-Apim-Subscription-Key for the QnA Maker service</param>
-        /// <param name="httpClient">Http Client to be used.</param>
-        public QnAMakerService(string subscriptionKey, HttpClient httpClient)
-        {
             this.subscriptionKey = subscriptionKey;
-            this.httpClient = httpClient;
+            this.hostUrl = hostUrl;
         }
 
         /// <inheritdoc/>
-        public async Task<GenerateAnswerResponse> GenerateAnswerAsync(GenerateAnswerRequest request, string kbId, string hostUrl)
+        public async Task<GenerateAnswerResponse> GenerateAnswerAsync(string kbId, GenerateAnswerRequest request)
         {
-            string uri = $"{hostUrl}/qnamaker/{MethodKB}/{kbId}/generateAnswer";
+            if (string.IsNullOrEmpty(this.hostUrl))
+            {
+                throw new InvalidOperationException($"{nameof(this.GenerateAnswerAsync)} was called on an instance of {nameof(QnAMakerService)} with no host url provided");
+            }
+
+            string uri = $"{this.hostUrl}/qnamaker/{MethodKB}/{kbId}/generateAnswer";
             await this.FetchQnAMakerEndpointKey();
             using (var httpRequest = new HttpRequestMessage(HttpMethod.Post, uri))
             {
@@ -102,9 +79,9 @@ namespace Lib.Helpers
         }
 
         /// <inheritdoc/>
-        public async Task<QnAMakerResponse> UpdateKB(UpdateKBRequest body)
+        public async Task<QnAMakerResponse> UpdateKB(string kbId, UpdateKBRequest body)
         {
-            string uri = $"{QnAMakerRequestUrl}/{MethodKB}/{this.kbId}";
+            string uri = $"{QnAMakerRequestUrl}/{MethodKB}/{kbId}";
             using (var httpRequest = new HttpRequestMessage(new HttpMethod("PATCH"), uri))
             {
                 httpRequest.Content = new StringContent(JsonConvert.SerializeObject(body), Encoding.UTF8, "application/json");
@@ -118,9 +95,9 @@ namespace Lib.Helpers
         }
 
         /// <inheritdoc/>
-        public async Task<bool> PublishKB(string kbId = null)
+        public async Task<bool> PublishKB(string kbId)
         {
-            var uri = $"{QnAMakerRequestUrl}/{MethodKB}/{kbId ?? this.kbId}";
+            var uri = $"{QnAMakerRequestUrl}/{MethodKB}/{kbId}";
             using (var httpRequest = new HttpRequestMessage(HttpMethod.Post, uri))
             {
                 httpRequest.Headers.Add(Constants.OcpApimSubscriptionKey, this.subscriptionKey);
@@ -179,9 +156,9 @@ namespace Lib.Helpers
         }
 
         /// <inheritdoc/>
-        public async Task<GetKnowledgeBaseDetailsResponse> GetKnowledgeBaseDetails()
+        public async Task<GetKnowledgeBaseDetailsResponse> GetKnowledgeBaseDetails(string kbId)
         {
-            var uri = $"{QnAMakerRequestUrl}/{MethodKB}/{this.kbId}";
+            var uri = $"{QnAMakerRequestUrl}/{MethodKB}/{kbId}";
             using (HttpRequestMessage httpRequest = new HttpRequestMessage(HttpMethod.Get, uri))
             {
                 httpRequest.Headers.Add(Constants.OcpApimSubscriptionKey, this.subscriptionKey);
@@ -196,15 +173,8 @@ namespace Lib.Helpers
         /// <inheritdoc/>
         public async Task<string> AwaitOperationCompletionState(QnAMakerResponse response)
         {
-            int delay = 1000; // ms
-            QnAMakerResponse getOperationDetailsResponse = response;
-            while (!this.IsOperationComplete(getOperationDetailsResponse))
-            {
-                await Task.Delay(delay);
-                getOperationDetailsResponse = await this.GetOperationDetails(response.OperationId);
-            }
-
-            return getOperationDetailsResponse.OperationState;
+            var completedResponse = await this.AwaitOperationCompletionResponse(response);
+            return completedResponse.OperationState;
         }
 
         /// <inheritdoc/>

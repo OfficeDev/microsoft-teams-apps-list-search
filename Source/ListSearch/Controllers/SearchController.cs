@@ -86,12 +86,13 @@ namespace ListSearch.Controllers
             KBInfoHelper kbInfoHelper = new KBInfoHelper(this.connectionString);
             KBInfo kbInfo = await kbInfoHelper.GetKBInfo(kbId);
 
-            string hostUrl = ConfigurationManager.AppSettings["HostUrl"];
-            QnAMakerService qnaMakerHelper = new QnAMakerService(this.httpClient);
+            var subscriptionKey = ConfigurationManager.AppSettings["Ocp-Apim-Subscription-Key"];
+            var hostUrl = ConfigurationManager.AppSettings["HostUrl"];
+            QnAMakerService qnaMakerHelper = new QnAMakerService(this.httpClient, subscriptionKey, hostUrl);
 
             int top = this.topResultsToBeFetched;
             GenerateAnswerRequest generateAnswerRequest = new GenerateAnswerRequest(searchedKeyword, top);
-            GenerateAnswerResponse result = await qnaMakerHelper.GenerateAnswerAsync(generateAnswerRequest, kbId, hostUrl);
+            GenerateAnswerResponse result = await qnaMakerHelper.GenerateAnswerAsync(kbId, generateAnswerRequest);
 
             List<SelectedSearchResult> selectedSearchResults = new List<SelectedSearchResult>();
 
