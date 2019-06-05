@@ -12,6 +12,8 @@ namespace ConfigApp
     using Autofac.Integration.Mvc;
     using ConfigApp.Controllers;
     using Lib.Helpers;
+    using Microsoft.ApplicationInsights;
+    using Microsoft.ApplicationInsights.Extensibility;
 
     /// <summary>
     /// Autofac configuration
@@ -26,6 +28,11 @@ namespace ConfigApp
         {
             var builder = new ContainerBuilder();
             builder.RegisterControllers(Assembly.GetExecutingAssembly());
+
+            builder.Register(c =>
+            {
+                return new TelemetryClient(new TelemetryConfiguration(ConfigurationManager.AppSettings["APPINSIGHTS_INSTRUMENTATIONKEY"]));
+            }).SingleInstance();
 
             builder.Register(c => new HttpClient())
                 .As<HttpClient>()
