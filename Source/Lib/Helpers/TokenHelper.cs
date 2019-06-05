@@ -61,7 +61,7 @@ namespace Lib.Helpers
         public async Task<string> GetAccessTokenAsync(string tokenType)
         {
             TokenEntity token = await this.GetTokenEntity(TokenTypes.GraphTokenType);
-            if (token.ExpiryDateTime < DateTime.Now.AddMinutes(TokenExpiryAllowanceInMinutes))
+            if (token.ExpiryDateTime.ToUniversalTime() < DateTime.UtcNow.AddMinutes(TokenExpiryAllowanceInMinutes))
             {
                 token = await this.RefreshTokenAsync(token);
             }

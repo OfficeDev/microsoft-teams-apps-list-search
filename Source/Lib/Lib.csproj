@@ -61,6 +61,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Constants.cs" />
     <Compile Include="Helpers\BlobHelper.cs" />
     <Compile Include="Helpers\CamelCaseExceptDictionaryKeysResolver.cs" />
     <Compile Include="Helpers\ConfigHelper.cs" />
@@ -87,6 +88,7 @@
     <Compile Include="Models\GetListContentsResponse.cs" />
     <Compile Include="Models\JWTExceptions.cs" />
     <Compile Include="Models\KBInfo.cs" />
+    <Compile Include="Models\QnAMakerEndpointResponse.cs" />
     <Compile Include="Models\QnAMakerOperationStates.cs" />
     <Compile Include="Models\QnAMakerResponse.cs" />
     <Compile Include="Models\RefreshTokenResponse.cs" />
