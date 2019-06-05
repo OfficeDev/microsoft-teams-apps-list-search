@@ -44,13 +44,6 @@ namespace ListSearch.Controllers
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="RefreshController"/> class.
-        /// </summary>
-        public RefreshController()
-        {
-        }
-
-        /// <summary>
         /// Refreshes all KBs due for a refresh
         /// </summary>
         /// <returns><see cref="Task"/> to refresh KBs.</returns>
