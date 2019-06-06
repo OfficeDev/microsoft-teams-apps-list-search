@@ -17,7 +17,7 @@
         <!-- Search input and list of results -->
         <div id="searchPanel" class="flex-column flex-1">
             <div class="select-wrapper">
-                <button role="combobox" id="searchDatabase" class="select dropdown-toggle" data-toggle="dropdown">
+                <button role="combobox" class="select" data-toggle="dropdown">
                     <i aria-hidden="true" class="icon-base icon-arrowdown"></i>
                     <span id="comboboxText" class="placeholder-text">Select the list to search</span>
                 </button>
@@ -33,13 +33,13 @@
                 <div><i aria-hidden="true" class="icon-base icon-search"></i></div>
                 <input id="inpSearchBox" placeholder="Search" class="input-field inputSearchBox" />
             </div>
-            <div id="searchResultsDiv" class="flex-column flex-1">
+            <div class="flex-column flex-1">
                 <div id="loader" style="display: none">
                     @Html.Partial("~/Views/Shared/_Spinner.cshtml")
                 </div>
                 <div id="resultsList" class="flex-1">
                 </div>
-                <div id="resultsError" style="display: none">
+                <div id="resultsError" style="display: none" class="flex-1">
                     @Html.Partial("~/Views/Error/ErrorPartial.cshtml")
                 </div>
             </div>
@@ -58,6 +58,31 @@
     </div>
     <script>
         microsoftTeams.initialize();
+
+        // Set appropriate dark/contrast theme for all the controls based on current theme
+        function setTheme(currentTheme) {
+            if (currentTheme === "dark") {
+                $(".theme-light").addClass("theme-dark").removeClass("theme-light");
+            }
+            else if (currentTheme === "contrast") {
+                $(".theme-light").addClass("theme-contrast").removeClass("theme-light");
+            }
+        }
+
+        // Parse the query parameters
+        function getQueryParameters() {
+            let queryParams = {};
+            location.search.substr(1).split("&").forEach(function (item) {
+                let s = item.split("="),
+                    k = s[0],
+                    v = s[1] && decodeURIComponent(s[1]);
+                queryParams[k] = v;
+            });
+            return queryParams;
+        }
+
+        var params = getQueryParameters();
+        setTheme(params["theme"]);
     </script>
     <script>
         var token = '@ViewData["token"]';
@@ -223,7 +248,7 @@
         // Share the selected card
         function shareCard(card) {
             microsoftTeams.tasks.submitTask(card);
-        }
+        }       
     </script>
 </body>
 </html>

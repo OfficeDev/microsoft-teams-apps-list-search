@@ -249,6 +249,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\customTeamsStyle.css" />
+    <Content Include="Content\customTheme.css" />
     <Content Include="Content\spinner.css" />
     <Content Include="Global.asax" />
     <Content Include="lib\bootstrap\dist\css\bootstrap-theme.css" />

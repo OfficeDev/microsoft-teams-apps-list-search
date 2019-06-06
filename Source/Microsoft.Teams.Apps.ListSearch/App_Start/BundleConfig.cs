@@ -36,7 +36,8 @@ namespace Microsoft.Teams.Apps.ListSearch
                 "~/lib/bootstrap/dist/css/bootstrap.min.css",
                 "~/lib/msteams-ui-styles-core/css/msteams-10.css",
                 "~/Content/spinner.css",
-                "~/Content/customTeamsStyle.css"));
+                "~/Content/customTeamsStyle.css",
+                "~/Content/customTheme.css"));
         }
     }
 }

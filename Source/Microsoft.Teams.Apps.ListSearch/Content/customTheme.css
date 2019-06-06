@@ -1,0 +1,67 @@
+﻿.theme-dark {
+    color: #fff !important;
+}
+
+.theme-dark .labelOverwrite {
+    color: inherit !important;
+}
+
+.theme-dark .placeholder-text {
+    color: inherit !important;
+}
+
+.theme-dark .select {
+    background-color: #201f1f !important;
+    color: inherit !important;
+}
+
+.theme-dark .resultItem:hover {    
+    background: #3b3a39;    
+}
+
+.theme-dark .select-items {
+    background-color: #2d2c2c !important;    
+    border-top: .1rem solid #6264a7 !important;
+}
+
+.theme-dark .select-item:hover {
+    background-color: #3b3a39;
+}
+
+.theme-contrast {
+    color: #fff !important;
+}
+
+.theme-contrast .labelOverwrite {
+    color: inherit !important;
+}
+
+.theme-contrast .placeholder-text {
+    color: inherit !important;
+}
+
+.theme-contrast .select {
+    background-color: #000 !important;
+    border: .1rem solid #fff;
+    color: inherit !important;
+}
+
+.theme-contrast .resultItem:hover {
+    background: rgb(255, 255, 1) !important;
+    color: rgb(0, 0, 0) !important;
+}
+
+.theme-contrast .select-items {
+    background-color: #000 !important;    
+    border: .1rem solid #fff;
+    border-top: .1rem solid rgb(255, 255, 1) !important;
+}
+
+.theme-contrast .select-item:hover {
+    background-color: rgb(255, 255, 1) !important;
+    color: rgb(0, 0, 0) !important;
+}
+
+.theme-contrast .input-field {
+    border: .1rem solid #fff;
+}
