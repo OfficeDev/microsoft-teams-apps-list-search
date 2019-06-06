@@ -32,12 +32,13 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
             var blobHelper = new BlobHelper(connectionString);
 
             string tenantId = ConfigurationManager.AppSettings["TenantId"];
-            string appId = ConfigurationManager.AppSettings["LoginAppClientId"];
-            string appSecret = ConfigurationManager.AppSettings["LoginAppClientSecret"];
-            var tokenHelper = new TokenHelper(httpClient, connectionString, tenantId, appId, appSecret, tokenKey: appSecret);
+            string appId = ConfigurationManager.AppSettings["GraphAppClientId"];
+            string appSecret = ConfigurationManager.AppSettings["GraphAppClientSecret"];
+            string tokenKey = ConfigurationManager.AppSettings["TokenEncryptionKey"];
+            var tokenHelper = new TokenHelper(httpClient, connectionString, tenantId, appId, appSecret, tokenKey);
             var graphHelper = new GraphHelper(httpClient, tokenHelper);
 
-            var subscriptionKey = ConfigurationManager.AppSettings["Ocp-Apim-Subscription-Key"];
+            var subscriptionKey = ConfigurationManager.AppSettings["QnAMakerSubscriptionKey"];
 
             this.kbInfoHelper = new KBInfoHelper(connectionString);
             this.refreshHelper = new KnowledgeBaseRefreshHelper(httpClient, blobHelper, this.kbInfoHelper, graphHelper, subscriptionKey);
@@ -48,7 +49,6 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
         /// </summary>
         /// <returns><see cref="Task"/> to refresh KBs.</returns>
         [HttpPost]
-        [HttpPatch]
         [RefreshAuthFilter]
         public async Task RefreshAllKBs()
         {

@@ -72,10 +72,10 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
             {
                 string user = activity.From.Id;
                 string tenant = activity.GetTenantId();
-                string jwt = this.jwtHelper.GenerateJWT(activity.From.Id, activity.From.Properties["aadObjectId"].ToString(), activity.GetTenantId(), Convert.ToInt32(ConfigurationManager.AppSettings["JWTExpiryMinutes"]));
+                string jwt = this.jwtHelper.GenerateJWT(activity.From.Id, activity.From.Properties["aadObjectId"].ToString(), activity.GetTenantId(), Convert.ToInt32(ConfigurationManager.AppSettings["JwtLifetimeInMinutes"]));
                 TaskInfo taskInfo = new TaskInfo()
                 {
-                    Url = $"{ConfigurationManager.AppSettings["WebAppUrl"]}/search/search?token={jwt}",
+                    Url = $"https://{ConfigurationManager.AppSettings["AppBaseDomain"]}/search/search?token={jwt}",
                     Title = Strings.MessagingExtensionTitle,
                     Width = WidthInPixels,
                     Height = HeightInPixels,

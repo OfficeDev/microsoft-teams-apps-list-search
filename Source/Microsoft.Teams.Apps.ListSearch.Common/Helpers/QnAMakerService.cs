@@ -47,7 +47,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
         /// Initializes a new instance of the <see cref="QnAMakerService"/> class.
         /// </summary>
         /// <param name="httpClient">HttpClient for generating http requests</param>
-        /// <param name="subscriptionKey">Ocp-Apim-Subscription-Key for the QnA Maker service</param>
+        /// <param name="subscriptionKey">QnA Maker subscription key</param>
         /// <param name="hostUrl">QnA Maker service host URL</param>
         public QnAMakerService(HttpClient httpClient, string subscriptionKey, string hostUrl = null)
         {

@@ -65,8 +65,10 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
                 IssuedAt = DateTime.UtcNow,
                 Expires = DateTime.UtcNow.AddMinutes(jwtExpiryMinutes),
             };
+
             JwtSecurityTokenHandler tokenHandler = new JwtSecurityTokenHandler();
             SecurityToken token = tokenHandler.CreateToken(securityTokenDescriptor);
+
             return tokenHandler.WriteToken(token);
         }
 

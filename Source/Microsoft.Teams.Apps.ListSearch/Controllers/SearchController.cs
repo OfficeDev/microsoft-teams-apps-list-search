@@ -85,8 +85,8 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
             KBInfoHelper kbInfoHelper = new KBInfoHelper(this.connectionString);
             KBInfo kbInfo = await kbInfoHelper.GetKBInfo(kbId);
 
-            var subscriptionKey = ConfigurationManager.AppSettings["Ocp-Apim-Subscription-Key"];
-            var hostUrl = ConfigurationManager.AppSettings["HostUrl"];
+            var subscriptionKey = ConfigurationManager.AppSettings["QnAMakerSubscriptionKey"];
+            var hostUrl = ConfigurationManager.AppSettings["QnAMakerHostUrl"];
             QnAMakerService qnaMakerHelper = new QnAMakerService(this.httpClient, subscriptionKey, hostUrl);
 
             int top = this.topResultsToBeFetched;

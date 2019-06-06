@@ -48,7 +48,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Configuration
                 ConfigurationManager.AppSettings["ida:TenantId"],
                 ConfigurationManager.AppSettings["GraphAppClientId"],
                 ConfigurationManager.AppSettings["GraphAppClientSecret"],
-                ConfigurationManager.AppSettings["TokenKey"]))
+                ConfigurationManager.AppSettings["TokenEncryptionKey"]))
                 .As<TokenHelper>()
                 .SingleInstance();
 

@@ -39,7 +39,7 @@ namespace Microsoft.Teams.Apps.ListSearch
 
             builder.Register(c => new HttpClient()).As<HttpClient>().SingleInstance();
             builder.Register(c => new JwtHelper(
-                jwtSecurityKey: ConfigurationManager.AppSettings["JWTSecurityKey"],
+                jwtSecurityKey: ConfigurationManager.AppSettings["TokenEncryptionKey"],
                 botId: ConfigurationManager.AppSettings["MicrosoftAppId"])).As<JwtHelper>().SingleInstance();
 
             builder.RegisterType<SearchController>().InstancePerRequest();
