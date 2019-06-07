@@ -7,7 +7,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
     using System;
     using System.Collections.Generic;
     using System.Threading.Tasks;
-    using ListSearch.Common.Models;
+    using Microsoft.Teams.Apps.ListSearch.Common.Models;
     using Microsoft.WindowsAzure.Storage;
     using Microsoft.WindowsAzure.Storage.Table;
 

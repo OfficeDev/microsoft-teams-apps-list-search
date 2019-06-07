@@ -9,7 +9,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
     using System.Linq;
     using System.Net.Http;
     using System.Threading.Tasks;
-    using ListSearch.Common.Models;
+    using Microsoft.Teams.Apps.ListSearch.Common.Models;
     using Newtonsoft.Json;
 
     /// <summary>
@@ -169,8 +169,8 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
             {
                 Delete = new Delete()
                 {
-                    Sources = kbDetails.Sources
-                }
+                    Sources = kbDetails.Sources,
+                },
             };
             QnAMakerResponse deleteSourcesResult = await qnAMakerService.UpdateKB(kbId, deleteSourcesRequest);
             string deleteSourcesResultState = await qnAMakerService.AwaitOperationCompletionState(deleteSourcesResult);
@@ -199,9 +199,9 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
                         {
                             ColumnMapping = new ColumnMapping()
                             {
-                                Question = questionField
-                            }
-                        }
+                                Question = questionField,
+                            },
+                        },
                     });
             }
 
@@ -210,7 +210,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
                 Add = new Add()
                 {
                     Files = files,
-                }
+                },
             };
 
             QnAMakerResponse addSourcesResult = await qnAMakerService.UpdateKB(kbId, addSourcesRequest);

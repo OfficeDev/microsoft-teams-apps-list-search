@@ -10,7 +10,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Filters
     using System.Threading;
     using System.Threading.Tasks;
     using System.Web.Http.Filters;
-    using ListSearch.Models;
+    using Microsoft.Teams.Apps.ListSearch.Models;
 
     /// <summary>
     /// Authentication filter for the refresh endpoint

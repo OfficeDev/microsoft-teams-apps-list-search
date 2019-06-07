@@ -5,7 +5,7 @@
 namespace Microsoft.Teams.Apps.ListSearch.Configuration.Models
 {
     using System.Collections.Generic;
-    using Common.Models;
+    using Microsoft.Teams.Apps.ListSearch.Common.Models;
     using Newtonsoft.Json;
 
     /// <summary>

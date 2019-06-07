@@ -11,9 +11,9 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
     using System.Threading.Tasks;
     using System.Web.Mvc;
     using System.Xml;
-    using ListSearch.Common.Helpers;
-    using ListSearch.Common.Models;
-    using ListSearch.Filters;
+    using Microsoft.Teams.Apps.ListSearch.Common.Helpers;
+    using Microsoft.Teams.Apps.ListSearch.Common.Models;
+    using Microsoft.Teams.Apps.ListSearch.Filters;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
 

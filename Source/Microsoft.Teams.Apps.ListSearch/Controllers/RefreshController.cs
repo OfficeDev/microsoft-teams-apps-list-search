@@ -10,9 +10,9 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
     using System.Net.Http;
     using System.Threading.Tasks;
     using System.Web.Http;
-    using ListSearch.Common.Helpers;
-    using ListSearch.Common.Models;
-    using ListSearch.Filters;
+    using Microsoft.Teams.Apps.ListSearch.Common.Helpers;
+    using Microsoft.Teams.Apps.ListSearch.Common.Models;
+    using Microsoft.Teams.Apps.ListSearch.Filters;
 
     /// <summary>
     /// Controller to refresh the KB.

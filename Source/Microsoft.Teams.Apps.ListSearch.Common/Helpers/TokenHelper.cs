@@ -11,7 +11,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
     using System.Security.Cryptography;
     using System.Text;
     using System.Threading.Tasks;
-    using ListSearch.Common.Models;
+    using Microsoft.Teams.Apps.ListSearch.Common.Models;
     using Microsoft.WindowsAzure.Storage;
     using Microsoft.WindowsAzure.Storage.Table;
     using Newtonsoft.Json;
@@ -87,33 +87,31 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
                     new KeyValuePair<string, string>("assertion", accessToken),
                     new KeyValuePair<string, string>("scope", Scope),
                     new KeyValuePair<string, string>("requested_token_use", "on_behalf_of"),
-            });
-            using (var client = this.httpClient)
+                });
+
+            HttpResponseMessage res = await this.httpClient.PostAsync(this.tokenEndpoint, content);
+            res.EnsureSuccessStatusCode();
+
+            string json = await res.Content.ReadAsStringAsync();
+            AzureADTokenResponse tokenResponse = JsonConvert.DeserializeObject<AzureADTokenResponse>(json);
+            TokenEntity tokenEntity = new TokenEntity()
             {
-                HttpResponseMessage res = await client.PostAsync(this.tokenEndpoint, content);
-                res.EnsureSuccessStatusCode();
+                PartitionKey = PartitionKey,
+                RowKey = TokenTypes.GraphTokenType,
+                AccessToken = this.EncryptToken(tokenResponse.AccessToken, this.tokenKey),
+                RefreshToken = this.EncryptToken(tokenResponse.RefreshToken, this.tokenKey),
+                Scopes = Scope,
+                UserPrincipalName = userEmail,
+                ExpiryDateTime = DateTime.UtcNow.AddSeconds(tokenResponse.ExpiresIn),
+            };
 
-                string json = await res.Content.ReadAsStringAsync();
-                AzureADTokenResponse tokenResponse = JsonConvert.DeserializeObject<AzureADTokenResponse>(json);
-                TokenEntity tokenEntity = new TokenEntity()
-                {
-                    PartitionKey = PartitionKey,
-                    RowKey = TokenTypes.GraphTokenType,
-                    AccessToken = this.EncryptToken(tokenResponse.AccessToken, this.tokenKey),
-                    RefreshToken = this.EncryptToken(tokenResponse.RefreshToken, this.tokenKey),
-                    Scopes = Scope,
-                    UserPrincipalName = userEmail,
-                    ExpiryDateTime = DateTime.UtcNow.AddSeconds(tokenResponse.ExpiresIn),
-                };
-
-                var result = await this.StoreTokenEntityAsync(tokenEntity);
-                if (result.HttpStatusCode != (int)System.Net.HttpStatusCode.NoContent)
-                {
-                    return false;
-                }
-
-                return true;
+            var result = await this.StoreTokenEntityAsync(tokenEntity);
+            if (result.HttpStatusCode != (int)System.Net.HttpStatusCode.NoContent)
+            {
+                return false;
             }
+
+            return true;
         }
 
         /// <summary>
@@ -144,7 +142,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
                     new KeyValuePair<string, string>("client_secret", this.clientSecret),
                     new KeyValuePair<string, string>("refresh_token", this.DecryptToken(token.RefreshToken, this.tokenKey)),
                     new KeyValuePair<string, string>("scope", token.Scopes),
-            });
+                });
 
             var response = await this.httpClient.PostAsync(this.tokenEndpoint, body);
             string responseBody = await response.Content.ReadAsStringAsync();

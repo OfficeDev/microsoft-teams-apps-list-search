@@ -9,12 +9,12 @@ namespace Microsoft.Teams.Apps.ListSearch.Configuration.Controllers
     using System.Threading.Tasks;
     using System.Web;
     using System.Web.Mvc;
-    using ListSearch.Common;
-    using ListSearch.Common.Helpers;
-    using ListSearch.Common.Models;
-    using ListSearch.Configuration.Models;
     using Microsoft.Owin.Security;
     using Microsoft.Owin.Security.OpenIdConnect;
+    using Microsoft.Teams.Apps.ListSearch.Common;
+    using Microsoft.Teams.Apps.ListSearch.Common.Helpers;
+    using Microsoft.Teams.Apps.ListSearch.Common.Models;
+    using Microsoft.Teams.Apps.ListSearch.Configuration.Models;
 
     /// <summary>
     /// Home Controller
@@ -79,7 +79,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Configuration.Controllers
                     nameof(KBInfo.QuestionField),
                     nameof(KBInfo.AnswerFields),
                     nameof(KBInfo.SharePointSiteId),
-                    nameof(KBInfo.LastRefreshAttemptError)
+                    nameof(KBInfo.LastRefreshAttemptError),
                });
 
             return new HomeViewModel()

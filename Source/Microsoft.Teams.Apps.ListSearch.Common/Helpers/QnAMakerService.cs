@@ -7,7 +7,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
     using System.Net.Http;
     using System.Text;
     using System.Threading.Tasks;
-    using ListSearch.Common.Models;
+    using Microsoft.Teams.Apps.ListSearch.Common.Models;
     using Newtonsoft.Json;
 
     /// <summary>

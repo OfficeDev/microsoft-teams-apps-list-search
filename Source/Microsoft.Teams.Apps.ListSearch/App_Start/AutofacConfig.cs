@@ -12,10 +12,10 @@ namespace Microsoft.Teams.Apps.ListSearch
     using Autofac;
     using Autofac.Integration.Mvc;
     using Autofac.Integration.WebApi;
-    using ListSearch.Common.Helpers;
-    using ListSearch.Controllers;
     using Microsoft.ApplicationInsights;
     using Microsoft.ApplicationInsights.Extensibility;
+    using Microsoft.Teams.Apps.ListSearch.Common.Helpers;
+    using Microsoft.Teams.Apps.ListSearch.Controllers;
 
     /// <summary>
     /// Autofac configuration

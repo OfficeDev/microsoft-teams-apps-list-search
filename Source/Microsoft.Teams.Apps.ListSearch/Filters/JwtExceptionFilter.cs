@@ -6,8 +6,8 @@ namespace Microsoft.Teams.Apps.ListSearch.Filters
 {
     using System.Linq;
     using System.Web.Mvc;
-    using ListSearch.Common.Models;
     using Microsoft.IdentityModel.Tokens;
+    using Microsoft.Teams.Apps.ListSearch.Common.Models;
 
     /// <summary>
     /// Custom exception handler.

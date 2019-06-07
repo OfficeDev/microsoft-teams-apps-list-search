@@ -5,7 +5,7 @@
 namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
 {
     using System.Threading.Tasks;
-    using ListSearch.Common.Models;
+    using Microsoft.Teams.Apps.ListSearch.Common.Models;
 
     /// <summary>
     /// Interface of QnA Maker Service

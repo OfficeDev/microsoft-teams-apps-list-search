@@ -8,7 +8,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
     using System.Net.Http;
     using System.Net.Http.Headers;
     using System.Threading.Tasks;
-    using ListSearch.Common.Models;
+    using Microsoft.Teams.Apps.ListSearch.Common.Models;
 
     /// <summary>
     /// Helper for Graph.

@@ -57,7 +57,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
                         new Claim(ClaimTypeSender, "bot"),
                         new Claim(ClaimTypeUserTeamsId, userTeamsId),
                         new Claim(ClaimTypeUserAadId, userAadId),
-                        new Claim(ClaimTypeTenant, botTenantId)
+                        new Claim(ClaimTypeTenant, botTenantId),
                     }, JwtAuthenticationType),
                 NotBefore = DateTime.UtcNow,
                 SigningCredentials = signingCredentials,
@@ -90,7 +90,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
                 IssuerSigningKey = signingKey,
                 RequireExpirationTime = true,
                 ValidateLifetime = true,
-                ClockSkew = TimeSpan.Zero
+                ClockSkew = TimeSpan.Zero,
             };
             try
             {

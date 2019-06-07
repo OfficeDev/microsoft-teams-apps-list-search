@@ -55,7 +55,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Models
             HttpResponseMessage response = new HttpResponseMessage(HttpStatusCode.Unauthorized)
             {
                 RequestMessage = this.Request,
-                ReasonPhrase = this.ReasonPhrase
+                ReasonPhrase = this.ReasonPhrase,
             };
             return response;
         }

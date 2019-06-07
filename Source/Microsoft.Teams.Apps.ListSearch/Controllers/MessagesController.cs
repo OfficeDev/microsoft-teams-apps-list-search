@@ -11,12 +11,12 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
     using System.Net.Http;
     using System.Web.Http;
     using AdaptiveCards;
-    using ListSearch.Common.Helpers;
-    using ListSearch.Common.Models;
-    using ListSearch.Models;
     using Microsoft.Bot.Connector;
     using Microsoft.Bot.Connector.Teams;
     using Microsoft.Bot.Connector.Teams.Models;
+    using Microsoft.Teams.Apps.ListSearch.Common.Helpers;
+    using Microsoft.Teams.Apps.ListSearch.Common.Models;
+    using Microsoft.Teams.Apps.ListSearch.Models;
     using Microsoft.Teams.Apps.ListSearch.Resources;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
@@ -83,7 +83,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
                 };
                 TaskSubmitResponse taskEnvelope = new TaskSubmitResponse()
                 {
-                    Task = new TaskContinueResult(taskInfo)
+                    Task = new TaskContinueResult(taskInfo),
                 };
                 return this.Request.CreateResponse(HttpStatusCode.OK, taskEnvelope);
             }
@@ -113,45 +113,45 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
                 AdaptiveCard card = new AdaptiveCard(AdaptiveCardVersion)
                 {
                     Body = new List<AdaptiveElement>()
-                {
-                    new AdaptiveContainer()
                     {
-                        Items = new List<AdaptiveElement>()
+                        new AdaptiveContainer()
                         {
-                            new AdaptiveTextBlock()
+                            Items = new List<AdaptiveElement>()
                             {
-                                Text = selectedSearchResult.Question,
-                                Weight = AdaptiveTextWeight.Bolder,
-                                Wrap = true,
-                                Size = AdaptiveTextSize.Large
+                                new AdaptiveTextBlock()
+                                {
+                                    Text = selectedSearchResult.Question,
+                                    Weight = AdaptiveTextWeight.Bolder,
+                                    Wrap = true,
+                                    Size = AdaptiveTextSize.Large,
+                                },
                             },
-                        }
-                    },
-                    new AdaptiveContainer()
-                    {
-                        Items = new List<AdaptiveElement>()
+                        },
+                        new AdaptiveContainer()
                         {
-                            new AdaptiveFactSet()
+                            Items = new List<AdaptiveElement>()
                             {
-                                Facts = facts ?? new List<AdaptiveFact>(),
-                            }
-                        }
-                    }
-                },
-                Actions = new List<AdaptiveAction>()
-                {
-                    new AdaptiveOpenUrlAction()
+                                new AdaptiveFactSet()
+                                {
+                                    Facts = facts ?? new List<AdaptiveFact>(),
+                                },
+                            },
+                        },
+                    },
+                    Actions = new List<AdaptiveAction>()
                     {
-                        Url = new Uri(sharePointUrl),
-                        Title = Strings.ResultCardButtonTitle,
-                    }
-                }
+                        new AdaptiveOpenUrlAction()
+                        {
+                            Url = new Uri(sharePointUrl),
+                            Title = Strings.ResultCardButtonTitle,
+                        },
+                    },
                 };
 
                 Attachment attachment = new Attachment()
                 {
                     Content = card,
-                    ContentType = AdaptiveCard.ContentType
+                    ContentType = AdaptiveCard.ContentType,
                 };
 
                 ComposeExtensionResponse composeExtensionResponse = new ComposeExtensionResponse()
@@ -160,8 +160,8 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
                     {
                         Attachments = new List<ComposeExtensionAttachment>() { attachment.ToComposeExtensionAttachment() },
                         Type = ComposeExtensionResultType.TaskResult,
-                        AttachmentLayout = AttachmentLayoutTypes.List
-                    }
+                        AttachmentLayout = AttachmentLayoutTypes.List,
+                    },
                 };
                 return this.Request.CreateResponse(HttpStatusCode.OK, composeExtensionResponse);
             }

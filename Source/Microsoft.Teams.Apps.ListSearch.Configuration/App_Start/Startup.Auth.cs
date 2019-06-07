@@ -11,14 +11,14 @@ namespace Microsoft.Teams.Apps.ListSearch.Configuration
     using System.Threading.Tasks;
     using System.Web.Helpers;
     using Autofac;
-    using Common;
-    using Common.Helpers;
     using global::Owin;
     using Microsoft.IdentityModel.Clients.ActiveDirectory;
     using Microsoft.IdentityModel.Protocols.OpenIdConnect;
     using Microsoft.Owin.Security;
     using Microsoft.Owin.Security.Cookies;
     using Microsoft.Owin.Security.OpenIdConnect;
+    using Microsoft.Teams.Apps.ListSearch.Common;
+    using Microsoft.Teams.Apps.ListSearch.Common.Helpers;
 
     /// <summary>
     /// Startup file
@@ -77,8 +77,8 @@ namespace Microsoft.Teams.Apps.ListSearch.Configuration
                         }
 
                         return Task.CompletedTask;
-                    }
-                }
+                    },
+                },
             });
 
             app.UseOpenIdConnectAuthentication(new OpenIdConnectAuthenticationOptions(Constants.SharePointAppLoginAuthenticationType)
@@ -111,8 +111,8 @@ namespace Microsoft.Teams.Apps.ListSearch.Configuration
                         }
 
                         return Task.CompletedTask;
-                    }
-                }
+                    },
+                },
             });
             AntiForgeryConfig.UniqueClaimTypeIdentifier = ClaimTypes.Upn;
         }
