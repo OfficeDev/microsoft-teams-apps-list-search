@@ -92,25 +92,18 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
                 ValidateLifetime = true,
                 ClockSkew = TimeSpan.Zero,
             };
-            try
-            {
-                SecurityToken mytoken = new JwtSecurityToken();
-                JwtSecurityTokenHandler myTokenHandler = new JwtSecurityTokenHandler();
-                ClaimsPrincipal myPrincipal = myTokenHandler.ValidateToken(jwt, validationParameters, out mytoken);
 
-                JwtSecurityToken claimsValidator = (JwtSecurityToken)mytoken;
-                if (!myPrincipal.HasClaim(ClaimTypeTenant, acceptingTenantId))
-                {
-                    throw new SecurityTokenException($"Claim for {ClaimTypeTenant} does not match the expected value.");
-                }
+            SecurityToken mytoken = new JwtSecurityToken();
+            JwtSecurityTokenHandler myTokenHandler = new JwtSecurityTokenHandler();
+            ClaimsPrincipal myPrincipal = myTokenHandler.ValidateToken(jwt, validationParameters, out mytoken);
 
-                return true;
-            }
-            catch
+            JwtSecurityToken claimsValidator = (JwtSecurityToken)mytoken;
+            if (!myPrincipal.HasClaim(ClaimTypeTenant, acceptingTenantId))
             {
-                // TODO: Log ex
-                throw;
+                throw new SecurityTokenException($"Claim for {ClaimTypeTenant} does not match the expected value.");
             }
+
+            return true;
         }
     }
 }

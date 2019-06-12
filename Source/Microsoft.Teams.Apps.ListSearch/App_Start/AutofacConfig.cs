@@ -12,10 +12,9 @@ namespace Microsoft.Teams.Apps.ListSearch
     using Autofac;
     using Autofac.Integration.Mvc;
     using Autofac.Integration.WebApi;
-    using Microsoft.ApplicationInsights;
-    using Microsoft.ApplicationInsights.Extensibility;
+    using Microsoft.Teams.Apps.Common.Configuration;
+    using Microsoft.Teams.Apps.Common.Logging;
     using Microsoft.Teams.Apps.ListSearch.Common.Helpers;
-    using Microsoft.Teams.Apps.ListSearch.Controllers;
 
     /// <summary>
     /// Autofac configuration
@@ -32,18 +31,23 @@ namespace Microsoft.Teams.Apps.ListSearch
             builder.RegisterControllers(Assembly.GetExecutingAssembly());
             builder.RegisterApiControllers(Assembly.GetExecutingAssembly());
 
-            builder.Register(c =>
-            {
-                return new TelemetryClient(new TelemetryConfiguration(ConfigurationManager.AppSettings["APPINSIGHTS_INSTRUMENTATIONKEY"]));
-            }).SingleInstance();
+            var config = new LocalConfigProvider();
 
-            builder.Register(c => new HttpClient()).As<HttpClient>().SingleInstance();
+            builder.Register(c => config)
+                .As<IConfigProvider>()
+                .SingleInstance();
+
+            builder.Register(c => new AppInsightsLogProvider(c.Resolve<IConfigProvider>()))
+                .As<ILogProvider>()
+                .SingleInstance();
+
+            builder.Register(c => new HttpClient())
+                .SingleInstance();
+
             builder.Register(c => new JwtHelper(
                 jwtSecurityKey: ConfigurationManager.AppSettings["TokenEncryptionKey"],
-                botId: ConfigurationManager.AppSettings["MicrosoftAppId"])).As<JwtHelper>().SingleInstance();
-
-            builder.RegisterType<SearchController>().InstancePerRequest();
-            builder.RegisterType<RefreshController>().InstancePerRequest();
+                botId: ConfigurationManager.AppSettings["MicrosoftAppId"]))
+                .SingleInstance();
 
             var container = builder.Build();
             DependencyResolver.SetResolver(new AutofacDependencyResolver(container));

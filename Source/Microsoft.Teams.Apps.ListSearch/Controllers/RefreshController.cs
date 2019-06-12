@@ -10,6 +10,8 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
     using System.Net.Http;
     using System.Threading.Tasks;
     using System.Web.Http;
+    using Microsoft.Teams.Apps.Common.Extensions;
+    using Microsoft.Teams.Apps.Common.Logging;
     using Microsoft.Teams.Apps.ListSearch.Common.Helpers;
     using Microsoft.Teams.Apps.ListSearch.Common.Models;
     using Microsoft.Teams.Apps.ListSearch.Filters;
@@ -21,12 +23,14 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
     {
         private readonly KBInfoHelper kbInfoHelper;
         private readonly KnowledgeBaseRefreshHelper refreshHelper;
+        private readonly ILogProvider logProvider;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RefreshController"/> class.
         /// </summary>
         /// <param name="httpClient">Http client to be used.</param>
-        public RefreshController(HttpClient httpClient)
+        /// <param name="logProvider">Log provider to be used</param>
+        public RefreshController(HttpClient httpClient, ILogProvider logProvider)
         {
             var connectionString = ConfigurationManager.AppSettings["StorageConnectionString"];
             var blobHelper = new BlobHelper(connectionString);
@@ -37,11 +41,11 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
             string tokenKey = ConfigurationManager.AppSettings["TokenEncryptionKey"];
             var tokenHelper = new TokenHelper(httpClient, connectionString, tenantId, appId, appSecret, tokenKey);
             var graphHelper = new GraphHelper(httpClient, tokenHelper);
-
             var subscriptionKey = ConfigurationManager.AppSettings["QnAMakerSubscriptionKey"];
 
             this.kbInfoHelper = new KBInfoHelper(connectionString);
-            this.refreshHelper = new KnowledgeBaseRefreshHelper(httpClient, blobHelper, this.kbInfoHelper, graphHelper, subscriptionKey);
+            this.refreshHelper = new KnowledgeBaseRefreshHelper(httpClient, blobHelper, this.kbInfoHelper, graphHelper, subscriptionKey, logProvider);
+            this.logProvider = logProvider;
         }
 
         /// <summary>
@@ -52,6 +56,8 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
         [RefreshAuthFilter]
         public async Task RefreshAllKBs()
         {
+            this.logProvider.LogInfo("Refreshing all knowledge bases");
+
             List<KBInfo> kbList = await this.kbInfoHelper.GetAllKBs(
                 fields: new string[]
                 {
@@ -62,6 +68,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
                     nameof(KBInfo.AnswerFields),
                     nameof(KBInfo.SharePointSiteId),
                 });
+            this.logProvider.LogInfo($"Found {kbList.Count} configured KBs");
 
             foreach (var kb in kbList)
             {
@@ -77,12 +84,30 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
                     try
                     {
                         await this.refreshHelper.RefreshKnowledgeBaseAsync(kb);
+
+                        var properties = new Dictionary<string, string>
+                        {
+                            { "KnowledgeBaseId", kb.KBId },
+                        };
+                        this.logProvider.LogEvent("KnowledgeBaseRefreshSuccess", properties);
                     }
-                    catch
+                    catch (Exception ex)
                     {
-                        // TODO: log ex
+                        var properties = new Dictionary<string, string>
+                        {
+                            { "KnowledgeBaseId", kb.KBId },
+                            { "LastRefreshDateTime", lastRefreshed.ToString("u") },
+                            { "ErrorMessage", ex.Message },
+                        };
+                        this.logProvider.LogEvent("KnowledgeBaseRefreshFailure", properties);
+
+                        this.logProvider.LogWarning($"Failed to refresh KB {kb.KBId}: {ex.Message}", exception: ex);
                         continue;
                     }
+                }
+                else
+                {
+                    this.logProvider.LogInfo($"Skipping refresh for {kb.KBId}, refreshed less than {kb.RefreshFrequencyInHours} hours ago");
                 }
             }
         }

@@ -78,7 +78,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
             TableResult insertOrMergeResult = await this.cloudTable.ExecuteAsync(insertOrMergeOperation);
             if (insertOrMergeResult.HttpStatusCode != this.insertSuccessResponseCode)
             {
-                throw new Exception($"HTTP Error code - {insertOrMergeResult.HttpStatusCode}"); // TODO: Handle Exception
+                throw new Exception($"HTTP Error code - {insertOrMergeResult.HttpStatusCode}");
             }
         }
     }

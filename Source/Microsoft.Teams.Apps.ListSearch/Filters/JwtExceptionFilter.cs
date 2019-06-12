@@ -7,6 +7,8 @@ namespace Microsoft.Teams.Apps.ListSearch.Filters
     using System.Linq;
     using System.Web.Mvc;
     using Microsoft.IdentityModel.Tokens;
+    using Microsoft.Teams.Apps.Common.Extensions;
+    using Microsoft.Teams.Apps.Common.Logging;
     using Microsoft.Teams.Apps.ListSearch.Common.Models;
 
     /// <summary>
@@ -22,21 +24,27 @@ namespace Microsoft.Teams.Apps.ListSearch.Filters
         /// <inheritdoc/>
         public void OnException(ExceptionContext filterContext)
         {
-            if (filterContext.Exception.GetType() == typeof(SecurityTokenException) || JWTExceptions.ExpectedJWTExceptionSources.Contains(filterContext.Exception.Source))
+            var logProvider = DependencyResolver.Current.GetService<ILogProvider>();
+
+            var ex = filterContext.Exception;
+            if (ex.GetType() == typeof(SecurityTokenException) || JWTExceptions.ExpectedJWTExceptionSources.Contains(ex.Source))
             {
-                if (filterContext.Exception.Message.Contains(JWTExceptions.LifetimeValidationFailedExceptionCode))
+                if (ex.Message.Contains(JWTExceptions.LifetimeValidationFailedExceptionCode))
                 {
+                    logProvider.LogWarning("Access denied: Expired JWT", exception: ex);
                     filterContext.Result = new RedirectResult($"/{ErrorController}/{TokenExpiredView}");
                     filterContext.ExceptionHandled = true;
                 }
                 else
                 {
+                    logProvider.LogWarning("Access denied: Invalid JWT", exception: ex);
                     filterContext.Result = new RedirectResult($"/{ErrorController}/{UnauthorizedAccessView}");
                     filterContext.ExceptionHandled = true;
                 }
             }
             else
             {
+                logProvider.LogError("Error while processing request", exception: ex);
                 filterContext.Result = new RedirectResult($"/{ErrorController}/{GenericErrorView}");
                 filterContext.ExceptionHandled = true;
             }

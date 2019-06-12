@@ -166,7 +166,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
             }
             else
             {
-                throw new Exception($"HTTP Error code - {response.StatusCode}"); // TODO: Handle Exception
+                throw new Exception($"HTTP Error code - {response.StatusCode}");
             }
         }
 

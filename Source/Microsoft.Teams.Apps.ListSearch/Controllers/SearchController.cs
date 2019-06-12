@@ -11,6 +11,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
     using System.Threading.Tasks;
     using System.Web.Mvc;
     using System.Xml;
+    using Microsoft.Teams.Apps.Common.Logging;
     using Microsoft.Teams.Apps.ListSearch.Common.Helpers;
     using Microsoft.Teams.Apps.ListSearch.Common.Models;
     using Microsoft.Teams.Apps.ListSearch.Filters;
@@ -27,18 +28,21 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
         private readonly int topResultsToBeFetched = 5;
         private readonly string tenantId;
         private readonly string connectionString;
+        private readonly ILogProvider logProvider;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SearchController"/> class.
         /// </summary>
         /// <param name="httpClient">Http client to be used.</param>
         /// <param name="jwtHelper">JWT Helper.</param>
-        public SearchController(System.Net.Http.HttpClient httpClient, JwtHelper jwtHelper)
+        /// <param name="logProvider">Log provider to use</param>
+        public SearchController(System.Net.Http.HttpClient httpClient, JwtHelper jwtHelper, ILogProvider logProvider)
         {
             this.httpClient = httpClient;
             this.jwtHelper = jwtHelper;
             this.tenantId = ConfigurationManager.AppSettings["TenantId"];
             this.connectionString = ConfigurationManager.AppSettings["StorageConnectionString"];
+            this.logProvider = logProvider;
         }
 
         /// <summary>
@@ -70,16 +74,8 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
         [JwtExceptionFilter]
         public async Task<PartialViewResult> SearchResults(string searchedKeyword, string kbId)
         {
-            var token = string.Empty;
-            var authHeader = this.Request.Headers["Authorization"];
-            if (authHeader?.StartsWith("bearer") ?? false)
-            {
-                token = authHeader.Split(' ')[1];
-            }
+            this.ValidateAuthorizationHeader();
 
-            this.jwtHelper.ValidateJWT(token, this.tenantId);
-
-            this.ViewData["token"] = token;
             this.ViewData["searchKeyword"] = searchedKeyword;
 
             KBInfoHelper kbInfoHelper = new KBInfoHelper(this.connectionString);
@@ -107,7 +103,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
                     {
                         List<ColumnInfo> answerFields = JsonConvert.DeserializeObject<List<ColumnInfo>>(kbInfo.AnswerFields);
                         JObject answerObj = JsonConvert.DeserializeObject<JObject>(item.Answer);
-                        List<DeserializedAnswer> answers = this.DeserializeAnswers(JObject.Parse(answerObj.ToString()), answerFields);
+                        List<DeserializedAnswer> answers = this.DeserializeAnswers(answerObj, answerFields);
 
                         selectedSearchResults.Add(new SelectedSearchResult()
                         {
@@ -132,17 +128,6 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
         [JwtExceptionFilter]
         public PartialViewResult ResultCardPartial(string kbId)
         {
-            var token = string.Empty;
-            var authHeader = this.Request.Headers["Authorization"];
-            if (authHeader?.StartsWith("bearer") ?? false)
-            {
-                token = authHeader.Split(' ')[1];
-            }
-
-            this.jwtHelper.ValidateJWT(token, this.tenantId);
-
-            this.ViewData["token"] = token;
-
             string selectedAnswer = Convert.ToString(this.Session["selectdAnswer"]);
             string selectedQuestion = Convert.ToString(this.Session["selectedQuestion"]);
             string selectedItemId = Convert.ToString(this.Session["selectedItemId"]);
@@ -167,14 +152,13 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
         /// <param name="answer">answer string</param>
         /// <param name="question">question string</param>
         /// <param name="id">id of selected item</param>
-        /// <param name="token">jwt auth token.</param>
         /// <returns><see cref="JsonResult"/> denoting success</returns>
         [HttpPost]
         [HandleError]
         [JwtExceptionFilter]
-        public JsonResult SetClickedItem(string answer, string question, string id, string token)
+        public JsonResult SetClickedItem(string answer, string question, string id)
         {
-            this.ValidateToken(token, out _);
+            this.ValidateAuthorizationHeader();
 
             this.Session["selectdAnswer"] = answer;
             this.Session["selectedQuestion"] = question;
@@ -182,30 +166,19 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
             return this.Json("success");
         }
 
-        /// <summary>
-        /// Validates JWT
-        /// </summary>
-        /// <param name="token">JWT to be validated</param>
-        /// <param name="tokenExpired">boolean value to check token has expired.</param>
-        private void ValidateToken(string token, out bool tokenExpired)
+        // Validate the incoming JWT
+        private string ValidateAuthorizationHeader()
         {
-            try
+            var token = string.Empty;
+            var authHeader = this.Request.Headers["Authorization"];
+            if (authHeader?.StartsWith("bearer") ?? false)
             {
-                tokenExpired = false;
-                this.jwtHelper.ValidateJWT(token, this.tenantId);
+                token = authHeader.Split(' ')[1];
             }
-            catch (Exception ex)
-            {
-                // TODO: log ex
-                if (ex.Message.Contains(JWTExceptions.LifetimeValidationFailedExceptionCode))
-                {
-                    tokenExpired = true;
-                }
-                else
-                {
-                    throw;
-                }
-            }
+
+            this.jwtHelper.ValidateJWT(token, this.tenantId);
+
+            return token;
         }
 
         /// <summary>

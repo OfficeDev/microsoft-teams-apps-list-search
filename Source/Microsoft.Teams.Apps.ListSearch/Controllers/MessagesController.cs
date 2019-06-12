@@ -7,6 +7,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
     using System;
     using System.Collections.Generic;
     using System.Configuration;
+    using System.Linq;
     using System.Net;
     using System.Net.Http;
     using System.Web.Http;
@@ -14,6 +15,8 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
     using Microsoft.Bot.Connector;
     using Microsoft.Bot.Connector.Teams;
     using Microsoft.Bot.Connector.Teams.Models;
+    using Microsoft.Teams.Apps.Common.Extensions;
+    using Microsoft.Teams.Apps.Common.Logging;
     using Microsoft.Teams.Apps.ListSearch.Common.Helpers;
     using Microsoft.Teams.Apps.ListSearch.Common.Models;
     using Microsoft.Teams.Apps.ListSearch.Models;
@@ -32,14 +35,17 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
         private const string AdaptiveCardVersion = "1.0";
 
         private readonly JwtHelper jwtHelper;
+        private readonly ILogProvider logProvider;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MessagesController"/> class.
         /// </summary>
         /// <param name="jwtHelper">instance of jwt helper</param>
-        public MessagesController(JwtHelper jwtHelper)
+        /// <param name="logProvider">instance of log provider</param>
+        public MessagesController(JwtHelper jwtHelper, ILogProvider logProvider)
         {
             this.jwtHelper = jwtHelper;
+            this.logProvider = logProvider;
         }
 
         /// <summary>
@@ -51,14 +57,11 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
         [Route("api/Messages")]
         public HttpResponseMessage Post([FromBody]Activity activity)
         {
-            if (activity == null)
-            {
-                throw new ArgumentNullException(nameof(activity));
-            }
+            this.LogActivityTelemetry(activity);
 
             if (activity.Type == ActivityTypes.Invoke)
             {
-                return this.HandleInvokeMessages(activity);
+                return this.HandleInvokeActivity(activity);
             }
             else
             {
@@ -66,7 +69,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
             }
         }
 
-        private HttpResponseMessage HandleInvokeMessages(Activity activity)
+        private HttpResponseMessage HandleInvokeActivity(Activity activity)
         {
             if (activity.Name == "composeExtension/fetchTask")
             {
@@ -169,33 +172,32 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
             return new HttpResponseMessage(HttpStatusCode.Accepted);
         }
 
-        private Activity HandleSystemMessage(Activity message)
+        /// <summary>
+        /// Log telemetry about the incoming activity.
+        /// </summary>
+        /// <param name="activity">The activity</param>
+        private void LogActivityTelemetry(Activity activity)
         {
-            if (message.Type == ActivityTypes.DeleteUserData)
-            {
-                // Implement user deletion here
-                // If we handle user deletion, return a real message
-            }
-            else if (message.Type == ActivityTypes.ConversationUpdate)
-            {
-                // Handle conversation state changes, like members being added and removed
-                // Use Activity.MembersAdded and Activity.MembersRemoved and Activity.Action for info
-                // Not available in all channels
-            }
-            else if (message.Type == ActivityTypes.ContactRelationUpdate)
-            {
-                // Handle add/remove from contact lists
-                // Activity.From + Activity.Action represent what happened
-            }
-            else if (message.Type == ActivityTypes.Typing)
-            {
-                // Handle knowing the the user is typing
-            }
-            else if (message.Type == ActivityTypes.Ping)
-            {
-            }
+            var fromObjectId = activity.From?.Properties["aadObjectId"]?.ToString();
+            var clientInfoEntity = activity.Entities?.Where(e => e.Type == "clientInfo")?.FirstOrDefault();
+            var channelData = (JObject)activity.ChannelData;
 
-            return null;
+            var properties = new Dictionary<string, string>
+            {
+                { "ActivityId", activity.Id },
+                { "ActivityType", activity.Type },
+                { "ActivityName", activity.Name },
+                { "UserAadObjectId", fromObjectId },
+                {
+                    "ConversationType",
+                    string.IsNullOrWhiteSpace(activity.Conversation?.ConversationType) ? "personal" : activity.Conversation.ConversationType
+                },
+                { "TeamId", channelData?["team"]?["id"]?.ToString() },
+                { "SourceName", channelData?["source"]?["name"]?.ToString() },
+                { "Locale", clientInfoEntity?.Properties["locale"]?.ToString() },
+                { "Platform", clientInfoEntity?.Properties["platform"]?.ToString() },
+            };
+            this.logProvider.LogEvent("UserActivity", properties);
         }
     }
 }

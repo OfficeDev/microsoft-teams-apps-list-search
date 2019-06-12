@@ -9,6 +9,8 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
     using System.Linq;
     using System.Net.Http;
     using System.Threading.Tasks;
+    using Microsoft.Teams.Apps.Common.Extensions;
+    using Microsoft.Teams.Apps.Common.Logging;
     using Microsoft.Teams.Apps.ListSearch.Common.Models;
     using Newtonsoft.Json;
 
@@ -24,6 +26,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
         private readonly BlobHelper blobHelper;
         private readonly KBInfoHelper kbInfoHelper;
         private readonly GraphHelper graphHelper;
+        private readonly ILogProvider logProvider;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="KnowledgeBaseRefreshHelper"/> class.
@@ -33,13 +36,15 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
         /// <param name="kbInfoHelper">KB info helper</param>
         /// <param name="graphHelper">Graph helper</param>
         /// <param name="qnaMakerSubscriptionKey">QnAMaker subscription key</param>
-        public KnowledgeBaseRefreshHelper(HttpClient httpClient, BlobHelper blobHelper, KBInfoHelper kbInfoHelper, GraphHelper graphHelper, string qnaMakerSubscriptionKey)
+        /// <param name="logProvider">Log provider to use</param>
+        public KnowledgeBaseRefreshHelper(HttpClient httpClient, BlobHelper blobHelper, KBInfoHelper kbInfoHelper, GraphHelper graphHelper, string qnaMakerSubscriptionKey, ILogProvider logProvider)
         {
             this.httpClient = httpClient ?? throw new System.ArgumentNullException(nameof(httpClient));
             this.blobHelper = blobHelper;
             this.kbInfoHelper = kbInfoHelper;
             this.graphHelper = graphHelper;
             this.qnaMakerSubcriptionKey = qnaMakerSubscriptionKey;
+            this.logProvider = logProvider;
         }
 
         /// <summary>
@@ -49,6 +54,10 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
         /// <returns>Tracking task</returns>
         public async Task RefreshKnowledgeBaseAsync(KBInfo kb)
         {
+            this.logProvider.LogInfo($"Refreshing knowledge base {kb.KBId}");
+            this.logProvider.LogDebug($"Last successful refresh was on {kb.LastRefreshDateTime}");
+            this.logProvider.LogDebug($"Last refresh attempt was on {kb.LastRefreshAttemptDateTime}, with status {kb.LastRefreshAttemptError ?? "success"}");
+
             kb.LastRefreshAttemptDateTime = DateTime.UtcNow;
 
             try
@@ -59,12 +68,13 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
 
                 do
                 {
-                    string blobName = Guid.NewGuid().ToString() + JsonFileExtension;
-
                     listContents = await this.GetListContents(kb.SharePointListId, kb.AnswerFields, questionColumn.Name, kb.SharePointSiteId, listContents?.ODataNextLink ?? null);
 
+                    string blobName = Guid.NewGuid().ToString() + JsonFileExtension;
                     string blobUrl = await this.blobHelper.UploadBlobAsync(JsonConvert.SerializeObject(listContents), blobName);
                     blobInfoTemp.Add(blobName, new Uri(blobUrl));
+
+                    this.logProvider.LogDebug($"Fetched page of list contents, stored as {blobName}");
                 }
                 while (!string.IsNullOrEmpty(listContents.ODataNextLink));
 
@@ -74,7 +84,10 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
                 foreach (string blobName in blobInfoTemp.Keys)
                 {
                     await this.blobHelper.DeleteBlobAsync(blobName);
+                    this.logProvider.LogDebug($"Deleted temporary blob {blobName}");
                 }
+
+                this.logProvider.LogDebug($"Refresh of KB succeeded");
 
                 kb.LastRefreshDateTime = DateTime.UtcNow;
                 kb.LastRefreshAttemptError = null;
@@ -82,9 +95,13 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
             }
             catch (Exception ex)
             {
+                this.logProvider.LogError($"Refresh of KB failed: {ex.Message}", ex);
+
                 kb.LastRefreshAttemptError = ex.ToString();
                 await this.kbInfoHelper.InsertOrMergeKBInfo(kb);
             }
+
+            this.logProvider.LogInfo($"Finished refreshing KB {kb.KBId}, with status {kb.LastRefreshAttemptError ?? "success"}");
         }
 
         /// <summary>
@@ -97,24 +114,21 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
         /// <returns>Task that represents refresh operation.</returns>
         private async Task UpdateKnowledgeBaseAsync(string kbId, Dictionary<string, Uri> blobInfo, string questionField, BlobHelper blobHelper)
         {
-            if (string.IsNullOrWhiteSpace(kbId))
-            {
-                throw new ArgumentException($"{nameof(kbId)} must not be null or whitespace");
-            }
-
             QnAMakerService qnAMakerService = new QnAMakerService(this.httpClient, this.qnaMakerSubcriptionKey);
-            bool deleteSourcesResult = await this.DeleteExistingSources(qnAMakerService, kbId);
-            bool addSourcesResult = true;
 
-            // Less than 10 files
+            this.logProvider.LogDebug($"Deleting existing KB sources");
+            bool deleteSourcesResult = await this.DeleteExistingSources(qnAMakerService, kbId);
+
+            this.logProvider.LogDebug($"Adding new KB sources ({blobInfo.Count} files)");
+            bool addSourcesResult = true;
             if (blobInfo.Count < 10)
             {
+                // Fewer than 10 files
                 addSourcesResult = await this.AddNewSources(kbId, blobInfo, questionField, qnAMakerService);
             }
-
-            // More than 10 files
             else
             {
+                // More than 10 files, have to add them in batches
                 Dictionary<string, Uri> blobInfoBatch = new Dictionary<string, Uri>();
                 int filesExtracted = 0;
                 int counter = 0;
@@ -131,6 +145,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
                     }
 
                     // no more file left to include in batch
+                    this.logProvider.LogDebug($"Adding next batch of sources");
                     addSourcesResult = addSourcesResult && await this.AddNewSources(kbId, blobInfoBatch, questionField, qnAMakerService);
                     blobInfoBatch.Clear();
 
@@ -144,6 +159,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
 
                 if (blobInfoBatch.Count > 0)
                 {
+                    this.logProvider.LogDebug($"Adding final batch of sources");
                     addSourcesResult = addSourcesResult && await this.AddNewSources(kbId, blobInfoBatch, questionField, qnAMakerService);
                 }
             }
@@ -151,8 +167,11 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
             // if delete or any of the updates fails, KB is not published. Retry on next refresh.
             if (addSourcesResult && deleteSourcesResult)
             {
+                this.logProvider.LogDebug($"Publishing updated knowledge base");
                 await qnAMakerService.PublishKB(kbId);
             }
+
+            this.logProvider.LogInfo($"Updated knowledge base {kbId}");
         }
 
         /// <summary>
@@ -164,7 +183,6 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
         private async Task<bool> DeleteExistingSources(QnAMakerService qnAMakerService, string kbId)
         {
             GetKnowledgeBaseDetailsResponse kbDetails = await qnAMakerService.GetKnowledgeBaseDetails(kbId);
-
             UpdateKBRequest deleteSourcesRequest = new UpdateKBRequest()
             {
                 Delete = new Delete()
@@ -174,6 +192,8 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
             };
             QnAMakerResponse deleteSourcesResult = await qnAMakerService.UpdateKB(kbId, deleteSourcesRequest);
             string deleteSourcesResultState = await qnAMakerService.AwaitOperationCompletionState(deleteSourcesResult);
+
+            this.logProvider.LogDebug($"Add operation completed with status {deleteSourcesResultState}");
             return qnAMakerService.IsOperationSuccessful(deleteSourcesResultState);
         }
 
@@ -215,6 +235,8 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
 
             QnAMakerResponse addSourcesResult = await qnAMakerService.UpdateKB(kbId, addSourcesRequest);
             string addSourcesResultState = await qnAMakerService.AwaitOperationCompletionState(addSourcesResult);
+
+            this.logProvider.LogDebug($"Add operation completed with status {addSourcesResultState}");
             return qnAMakerService.IsOperationSuccessful(addSourcesResultState);
         }
 

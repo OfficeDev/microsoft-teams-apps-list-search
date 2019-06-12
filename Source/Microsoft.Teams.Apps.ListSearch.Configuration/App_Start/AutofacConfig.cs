@@ -31,7 +31,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Configuration
 
             builder.Register(c =>
             {
-                return new TelemetryClient(new TelemetryConfiguration(ConfigurationManager.AppSettings["APPINSIGHTS_INSTRUMENTATIONKEY"]));
+                return new TelemetryClient(new TelemetryConfiguration(ConfigurationManager.AppSettings["ApplicationInsightsInstrumentationKey"]));
             }).SingleInstance();
 
             builder.Register(c => new HttpClient())

@@ -197,21 +197,23 @@
                 answer: answer,
                 question: question,
                 id: id,
-                token: token,
             }
             $.ajax({
                 type: "POST",
                 url: '@Url.Action("SetClickedItem")',
                 data: payload,
                 dataType: "json",
+                beforeSend: function (request) {
+                    request.setRequestHeader("Authorization", "bearer " + token);
+                },
                 success: function () {
                     $.ajax({
                         type: "GET",
+                        url: '@Url.Action("ResultCardPartial")',
+                        data: { kbId: selectedKbId },
                         beforeSend: function (request) {
                             request.setRequestHeader("Authorization", "bearer " + token);
                         },
-                        url: '@Url.Action("ResultCardPartial")',
-                        data: { kbId: selectedKbId },
                         success: function (result) {
                             $("#searchPanel").hide();
                             $("#resultPanel").show();
