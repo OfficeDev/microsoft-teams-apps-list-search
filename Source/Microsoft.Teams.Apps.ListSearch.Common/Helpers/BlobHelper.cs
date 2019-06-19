@@ -4,6 +4,7 @@
 
 namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
 {
+    using System;
     using System.Threading.Tasks;
     using Microsoft.Teams.Apps.ListSearch.Common.Models;
     using Microsoft.WindowsAzure.Storage;
@@ -14,10 +15,8 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
     /// </summary>
     public class BlobHelper
     {
-        private static readonly string BlobContainerName = StorageInfo.BlobContainerName;
-        private readonly CloudStorageAccount storageAccount;
-        private readonly CloudBlobClient cloudBlobClient;
         private readonly CloudBlobContainer cloudBlobContainer;
+        private readonly Lazy<Task> initializeTask;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BlobHelper"/> class.
@@ -25,9 +24,11 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
         /// <param name="connectionString">Connection string of storage.</param>
         public BlobHelper(string connectionString)
         {
-            this.storageAccount = CloudStorageAccount.Parse(connectionString);
-            this.cloudBlobClient = this.storageAccount.CreateCloudBlobClient();
-            this.cloudBlobContainer = this.cloudBlobClient.GetContainerReference(BlobContainerName);
+            var storageAccount = CloudStorageAccount.Parse(connectionString);
+            var cloudBlobClient = storageAccount.CreateCloudBlobClient();
+            this.cloudBlobContainer = cloudBlobClient.GetContainerReference(StorageInfo.BlobContainerName);
+
+            this.initializeTask = new Lazy<Task>(() => this.InitializeAsync());
         }
 
         /// <summary>
@@ -38,6 +39,8 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
         /// <returns><see cref="Task"/> That represents upload operation.</returns>
         public async Task<string> UploadBlobAsync(string fileContents, string blobName)
         {
+            await this.initializeTask.Value;
+
             CloudBlockBlob cloudBlockBlob = this.cloudBlobContainer.GetBlockBlobReference(blobName);
             await cloudBlockBlob.UploadTextAsync(fileContents);
 
@@ -51,8 +54,22 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
         /// <returns><see cref="Task"/> That represents the delete operation.</returns>
         public async Task DeleteBlobAsync(string blobName)
         {
+            await this.initializeTask.Value;
+
             CloudBlockBlob cloudBlockBlob = this.cloudBlobContainer.GetBlockBlobReference(blobName);
             await cloudBlockBlob.DeleteIfExistsAsync();
+        }
+
+        private async Task InitializeAsync()
+        {
+            if (await this.cloudBlobContainer.CreateIfNotExistsAsync())
+            {
+                BlobContainerPermissions permissions = new BlobContainerPermissions
+                {
+                    PublicAccess = BlobContainerPublicAccessType.Blob,
+                };
+                await this.cloudBlobContainer.SetPermissionsAsync(permissions);
+            }
         }
     }
 }

@@ -273,7 +273,6 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <SubType>Designer</SubType>
     </Content>
-    <None Include="packages.config" />
     <Content Include="Views\Home\ConfigureList.cshtml" />
   </ItemGroup>
   <ItemGroup>

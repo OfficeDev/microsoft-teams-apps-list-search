@@ -26,13 +26,15 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
         private const double TokenExpiryAllowanceInMinutes = 5;
         private const string Scope = "offline_access https://graph.microsoft.com/Sites.Read.All";
 
-        private readonly CloudTableClient cloudTableClient;
-        private readonly CloudTable cloudTable;
         private readonly string tokenEndpoint;
         private readonly HttpClient httpClient;
         private readonly string clientId;
         private readonly string clientSecret;
         private readonly string tokenKey;
+        private readonly string connectionString;
+        private readonly Lazy<Task> initializeTask;
+
+        private CloudTable cloudTable;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TokenHelper"/> class.
@@ -45,9 +47,8 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
         /// <param name="tokenKey">Key used to secure the token</param>
         public TokenHelper(HttpClient httpClient, string connectionString, string tenantId, string clientId, string clientSecret, string tokenKey)
         {
-            var storageAccount = CloudStorageAccount.Parse(connectionString);
-            this.cloudTableClient = storageAccount.CreateCloudTableClient();
-            this.cloudTable = this.cloudTableClient.GetTableReference(StorageInfo.TokenTableName);
+            this.connectionString = connectionString;
+            this.initializeTask = new Lazy<Task>(() => this.InitializeAsync());
 
             this.httpClient = httpClient;
             this.tokenEndpoint = $"https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token";
@@ -122,6 +123,8 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
         /// <returns>TokenEntity</returns>
         public async Task<TokenEntity> GetTokenEntityAsync(string tokenType)
         {
+            await this.EnsureInitializedAsync();
+
             TableOperation retrieveOperation = TableOperation.Retrieve<TokenEntity>(PartitionKey, tokenType);
             TableResult retrievedResult = await this.cloudTable.ExecuteAsync(retrieveOperation);
 
@@ -177,10 +180,10 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
         /// <returns><see cref="Task"/> That resolves to <see cref="TableResult"/></returns>
         private async Task<TableResult> StoreTokenEntityAsync(TokenEntity tokenEntity)
         {
-            CloudTable cloudTable = this.cloudTableClient.GetTableReference(StorageInfo.TokenTableName);
+            await this.EnsureInitializedAsync();
             TableOperation insertOperation = TableOperation.InsertOrMerge(tokenEntity);
 
-            return await cloudTable.ExecuteAsync(insertOperation);
+            return await this.cloudTable.ExecuteAsync(insertOperation);
         }
 
         /// <summary>
@@ -239,6 +242,30 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
             }
 
             return token;
+        }
+
+        /// <summary>
+        /// Initializes the Cloud blob Container.
+        /// </summary>
+        /// <returns>Tracking task</returns>
+        private async Task InitializeAsync()
+        {
+            CloudStorageAccount storageAccount = CloudStorageAccount.Parse(this.connectionString);
+            CloudTableClient tableClient = storageAccount.CreateCloudTableClient();
+            CloudTable table = tableClient.GetTableReference(StorageInfo.TokenTableName);
+
+            await table.CreateIfNotExistsAsync();
+
+            this.cloudTable = table;
+        }
+
+        /// <summary>
+        /// Ensure the task initialized
+        /// </summary>
+        /// <returns>Tracking task</returns>
+        private async Task EnsureInitializedAsync()
+        {
+            await this.initializeTask.Value;
         }
     }
 }
