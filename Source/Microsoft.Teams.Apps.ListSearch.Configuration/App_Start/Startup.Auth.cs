@@ -28,6 +28,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Configuration
         private static string clientId = ConfigurationManager.AppSettings["ida:ClientId"];
         private static string aadInstance = EnsureTrailingSlash(ConfigurationManager.AppSettings["ida:AADInstance"]);
         private static string tenantId = ConfigurationManager.AppSettings["ida:TenantId"];
+        private static string redirectUri = ConfigurationManager.AppSettings["ida:RedirectUri"];
         private static string postLogoutRedirectUri = ConfigurationManager.AppSettings["ida:PostLogoutRedirectUri"];
         private static string authority = aadInstance + tenantId;
 
@@ -51,6 +52,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Configuration
             {
                 ClientId = clientId,
                 Authority = authority,
+                RedirectUri = redirectUri,
                 PostLogoutRedirectUri = postLogoutRedirectUri,
                 Notifications = new OpenIdConnectAuthenticationNotifications()
                 {
@@ -85,22 +87,23 @@ namespace Microsoft.Teams.Apps.ListSearch.Configuration
             {
                 AuthenticationMode = AuthenticationMode.Passive,
                 ClientId = ConfigurationManager.AppSettings["GraphAppClientId"],
+                ClientSecret = ConfigurationManager.AppSettings["GraphAppClientSecret"],
                 Authority = authority,
+                RedirectUri = redirectUri,
                 PostLogoutRedirectUri = postLogoutRedirectUri,
                 SignInAsAuthenticationType = Constants.SharePointAppLoginAuthenticationType,
                 Notifications = new OpenIdConnectAuthenticationNotifications()
                 {
-                    AuthorizationCodeReceived = (context) =>
+                    AuthorizationCodeReceived = async (context) =>
                     {
                         var authContext = new AuthenticationContext(context.Options.Authority);
-                        var redirectUri = new Uri(context.Request.Uri.GetLeftPart(UriPartial.Path));
-                        var credential = new ClientCredential(context.Options.ClientId, ConfigurationManager.AppSettings["GraphAppClientSecret"]);
+                        var credential = new ClientCredential(context.Options.ClientId, context.Options.ClientSecret);
 
-                        var tokenResponse = authContext.AcquireTokenByAuthorizationCodeAsync(context.Code, redirectUri, credential, context.Options.ClientId);
+                        var tokenResponse = await authContext.AcquireTokenByAuthorizationCodeAsync(context.Code, new Uri(redirectUri), credential, context.Options.ClientId);
 
                         var tokenHelper = container.Resolve<TokenHelper>();
                         var upn = context.AuthenticationTicket.Identity.Name;
-                        return tokenHelper.SetSharePointUserAsync(upn, tokenResponse.Result.AccessToken);
+                        await tokenHelper.SetSharePointUserAsync(upn, tokenResponse.AccessToken);
                     },
 
                     RedirectToIdentityProvider = (context) =>

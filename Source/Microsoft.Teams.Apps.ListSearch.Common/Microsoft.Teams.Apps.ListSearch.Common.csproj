@@ -89,9 +89,11 @@
     <Compile Include="Models\ExtractionOptions.cs" />
     <Compile Include="Models\File.cs" />
     <Compile Include="Models\GetKnowledgeBaseDetailsResponse.cs" />
+    <Compile Include="Models\GetListContentsColumnsResponse.cs" />
     <Compile Include="Models\GetListContentsResponse.cs" />
     <Compile Include="Models\JWTExceptions.cs" />
     <Compile Include="Models\KBInfo.cs" />
+    <Compile Include="Models\ParentReference.cs" />
     <Compile Include="Models\QnAMakerEndpointResponse.cs" />
     <Compile Include="Models\QnAMakerOperationStates.cs" />
     <Compile Include="Models\QnAMakerResponse.cs" />

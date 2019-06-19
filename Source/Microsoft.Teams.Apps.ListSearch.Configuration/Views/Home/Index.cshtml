@@ -22,6 +22,7 @@
                     <script type="text/javascript">
                         $(document).ready(function () {
                             $(".disableAction").attr("disabled", true);
+                            $(".disableAction").addClass("disableLinkButton");
                         })
                     </script>
                     <div>
@@ -48,26 +49,33 @@
             </div>
         </div>
     </div>
-</div>
-<br />
-<div class="container">
-    <div class="row">
+    <br />
+    <div>
         <div class="col-xs-12 col-sm-12">
-            <div class="row">
-                <div class="col-sm-4">
-                    <label>SharePoint list</label>
+            @if (Model.KBList.Count == 0)
+            {
+                <div class="row">
+                    <label>No SharePoint lists to show</label>
                 </div>
-                <div class="col-sm-2">
-                    <label>Refresh frequency</label>
+            }
+            else
+            {
+                <div class="row">
+                    <div class="col-sm-4">
+                        <label>SharePoint list</label>
+                    </div>
+                    <div class="col-sm-2">
+                        <label>Refresh frequency</label>
+                    </div>
+                    <div class="col-sm-2">
+                        <label>Last refreshed</label>
+                    </div>
+                    <div class="col-sm-1">
+                    </div>
+                    <div class="col-sm-1">
+                    </div>
                 </div>
-                <div class="col-sm-2">
-                    <label>Last refreshed</label>
-                </div>
-                <div class="col-sm-1">
-                </div>
-                <div class="col-sm-1">
-                </div>
-            </div>
+            }
             <hr />
             @foreach (var kb in Model.KBList)
             {
@@ -82,10 +90,10 @@
                         <label class="fontUnset">@kb.LastRefreshDateTime.ToString("g", CultureInfo.CurrentCulture)</label>
                     </div>
                     <div class="col-sm-1">
-                        <button class="btn btn-sm disableAction">Edit</button>
+                            @Html.ActionLink("Edit", "ConfigureList", "Home", new { id = kb.KBId }, new { @class = "btn btn-default btn-sm disableAction" })
                     </div>
                     <div class="col-sm-1">
-                        <button class="btn btn-sm disableAction">Delete</button>
+                            @Html.ActionLink("Delete", "DeleteKB", "Home", new { id = kb.KBId }, new { onclick = "return confirm('Are you sure you want to Delete?')", @class = "btn btn-default  btn-sm disableAction" })
                     </div>
                 </div>
                 <hr />

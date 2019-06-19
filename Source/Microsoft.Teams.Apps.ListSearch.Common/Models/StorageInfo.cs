@@ -20,6 +20,11 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Models
         public const string KBInfoTableName = "KBInfo";
 
         /// <summary>
+        /// KB Info Table Partition key
+        /// </summary>
+        public const string KBInfoTablePartitionKey = "KbInfo";
+
+        /// <summary>
         /// Token Table
         /// </summary>
         public const string TokenTableName = "Token";

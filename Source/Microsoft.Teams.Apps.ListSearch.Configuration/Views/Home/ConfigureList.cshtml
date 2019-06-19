@@ -1,0 +1,301 @@
+﻿@using Microsoft.Teams.Apps.ListSearch.Common.Models
+@{
+    ViewBag.Title = "ConfigureList";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@model KBInfo
+<div class="container">
+    <br />
+    <br />
+    <div class="row">
+        <div class="col-xs-4 col-sm-4 required">
+            Please provide the URL of the SharePoint list you want to make available in the app :
+        </div>
+        <div class="col-xs-4 col-sm-5">
+            <input type="text" class="form-control input-sm" id="txtSharepointUrl" value="@Model.SharePointUrl" />
+        </div>
+        <div class="col-xs-4 col-sm-3">
+            <button class="btn btnPurple" value="Enter" onclick="getSharePointListInfo()">Enter</button>
+        </div>
+    </div>
+    <hr />
+    <div class="row">
+        <div class="col-xs-4 col-sm-6 required">
+            List name :
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-4 col-sm-4">
+            <input type="text" class="form-control" id="txtListName" value="@Model.KBName" />
+        </div>
+    </div>
+    <hr />
+    <div class="row">
+        <div class="col-xs-4 col-sm-6 required">
+            Please select the column in your SharePoint List you want to search enabled in :
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-4 col-sm-4">
+            <select class="form-control" id="drpQuestionField">
+                <option value="-1">Select a column</option>
+            </select>
+        </div>
+    </div>
+    <hr />
+    <div class="row">
+        <div class="col-xs-4 col-sm-6 required">
+            What columns do you want to display results from? Please pick up to 4. They will be displayed in the results in the order you pick them:
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-4 col-sm-3">
+            <select class="form-control" id="drpAnswerField1">
+                <option value="-1">Select a column </option>
+            </select>
+        </div>
+        <div class="col-xs-4 col-sm-3">
+            <select class="form-control" id="drpAnswerField2">
+                <option value="-1">- </option>
+            </select>
+        </div>
+        <div class="col-xs-4 col-sm-3">
+            <select class="form-control" id="drpAnswerField3">
+                <option value="-1">- </option>
+            </select>
+        </div>
+        <div class="col-xs-4 col-sm-3">
+            <select class="form-control" id="drpAnswerField4">
+                <option value="-1">- </option>
+            </select>
+        </div>
+    </div>
+    <hr />
+    <div class="row">
+        <div class="col-xs-4 col-sm-6 required">
+            How frequently do you want to refresh the SharePoint list data?
+        </div>
+        <div class="col-xs-4 col-sm-2">
+            <label class="radio-inline"><input type="radio" name="refreshFrequencyInHours" value="6" checked>6 hours</label>
+        </div>
+        <div class="col-xs-4 col-sm-2">
+            <label class="radio-inline"><input type="radio" name="refreshFrequencyInHours" value="12">12 hours</label>
+
+        </div>
+        <div class="col-xs-4 col-sm-2">
+            <label class="radio-inline"><input type="radio" name="refreshFrequencyInHours" value="24">24 hours</label>
+        </div>
+    </div>
+    <br />
+    <div class="row">
+        <div class="col-xs-4 col-sm-3 pull-right">
+            <button type="button" class="btn" onclick="location.href='@Url.Action("Index", "Home")'">Cancel</button>
+            <button type="button" class="btn btnPurple" onclick="return SaveKbInfo()">Submit</button>
+        </div>
+    </div>
+    <input type="hidden" id="hdnListId" />
+    <input type="hidden" id="hdnSiteId" />
+</div>
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        $(".dismiss").click(function () {
+            $("#notification").fadeOut("slow");
+        });
+
+        //This is used to auto populate the Configured list when the user click on existing SharePoint list
+        if ($("#txtSharepointUrl").val().length > 0) {
+            getSharePointListInfo();
+        }
+    });
+
+    /** To validate form fields */
+    function isValidKbInfo() {
+        if (!isValidUrl($("#txtSharepointUrl").val())) {
+            pushNotification("Please enter a valid SharePoint URL");
+            return false;
+        }
+        else {
+            if ($("#txtListName").val().trim() === "") {
+                pushNotification("Please enter a display name for the list");
+                return false;
+            }
+
+            if ($("#drpQuestionField option:selected").val() === "-1") {
+                pushNotification("Please select a column to search");
+                return false;
+            }
+
+            let answeredFields = JSON.parse(getAnswerFields());
+            if (answeredFields.length === 0) {
+                pushNotification("Please select one or more columns to include in the result");
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /** To Save KbInfo on submit click */
+    function SaveKbInfo() {
+        if (!isValidKbInfo()) {
+            return false;
+        }
+        else {
+            let model = @Html.Raw(Json.Encode(Model));
+            let postObject = {
+                "KBId": model.KBId,
+                "KBName": $("#txtListName").val(),
+                "SharePointUrl": $("#txtSharepointUrl").val(),
+                "SharePointSiteId": $("#hdnSiteId").val(),
+                "QuestionField": getQuestionField(),
+                "AnswerFields": getAnswerFields(),
+                "SharePointListId": $("#hdnListId").val(),
+                "RefreshFrequencyInHours": $("input[name='refreshFrequencyInHours']:checked").val(),
+                "RowKey": model.RowKey,
+                "PartitionKey": model.PartitionKey,
+            };
+
+            $("#loader").show();
+
+            $.ajax({
+                url: '/Home/SaveKB',
+                type: "POST",
+                data: {
+                    kbInfo: postObject
+                },
+                success: function () {
+                    $("#loader").hide();
+                    pushNotification("Saved successfully");
+                    window.location = "@Url.Action("Index", "Home")";
+                },
+                error: function (xhr, errorType, exception) {
+                    $("#loader").hide();
+                    let responseTitle = $(xhr.responseText).filter('title').get(0);
+                    pushNotification("Unable to save: " + $(responseTitle).text());
+                }
+            });
+        }
+    }
+
+    /** To get selected question field object*/
+    function getQuestionField() {
+        return JSON.stringify({
+            "displayName": $("#drpQuestionField option:selected").text(),
+            "name": $("#drpQuestionField option:selected").val()
+        });
+    }
+
+    /** To get selected answer fields object*/
+    function getAnswerFields() {
+        let answeredFields = [];
+        $("select").each(function () {
+            if ($("#" + this.id + "  option:selected").val() !== "-1") {
+                if (this.id !== "drpQuestionField") {
+                    answeredFields.push({
+                        "displayName": $("#" + this.id + " option:selected").text(),
+                        "name": $("#" + this.id + " option:selected").val()
+                    });
+                }
+            }
+        });
+
+        return  JSON.stringify(answeredFields);
+    }
+
+    /**Get SharePoint List columns*/
+    function getSharePointListInfo() {
+        let enteredUrl = $("#txtSharepointUrl").val();
+        if (!isValidUrl(enteredUrl)) {
+            pushNotification("Please enter a valid URL");
+        }
+        else {
+            $("#loader").show();
+            $.ajax({
+                url: '/Home/GetSharePointListColumns',
+                type: "GET",
+                dataType: "json",
+                contentType: "application/json; charset=utf-8",
+                data: {
+                    sharePointSiteUrl: enteredUrl
+                },
+                success: function (result) {
+                    $("#loader").hide();
+                    bindData(result);
+                },
+                error: function (xhr, errorType, exception) {
+                    $("#loader").hide();
+                    pushNotification("Unable to get information about the given SharePoint list");
+                }
+            });
+        }
+    }
+
+    /**
+     *  Binds ListName, Question & Answer fields data sources from SharePoint list column.
+     * */
+    function bindData(response) {
+        $("#hdnListId").val(response.ListId);
+        $("#hdnSiteId").val(response.ParentReference.SiteId);
+        $("#txtListName").val(response.ListDisplayName);
+
+        let columnsData = response.Columns;
+        $('select').find("option:gt(0)").remove();
+        $.each(columnsData, function(key, value) {
+            $("select").append("<option value=\"" + value.Name + "\">" + value.DisplayName + "</option>");
+        });
+
+        populateExistingKB();
+    }
+
+    /**populate the form with existing KB */
+    function populateExistingKB() {
+        let model = @Html.Raw(Json.Encode(Model));
+        try {
+            let kbid = model.KBId;
+            if (kbid !== null) {           
+                let answerFields = JSON.parse(model.AnswerFields);
+                let questionField = JSON.parse(model.QuestionField);
+           
+                setSelectedItem("drpQuestionField", questionField.name);
+
+                answerFields.forEach(function (value, index, array) {
+                    setSelectedItem("drpAnswerField" + (index + 1), answerFields[index].name);
+                });
+
+                $("input[name=refreshFrequencyInHours][value=" + model.RefreshFrequencyInHours + "]").attr('checked', 'checked');
+                $("#txtListName").val(model.KBName);
+            }
+        }
+        catch (err) {
+            pushNotification("The current configuration is no longer valid because the list schema has changed. Please reconfigure this item.");
+        }
+
+    }
+
+
+    /* Set the selected item Question/Answer dropdown */
+    function setSelectedItem(selectedId, value) {
+        $('#' + selectedId + ' option[value="' + value +'"]').attr("selected", true);
+    }
+
+    /* Show a success or error message */
+    function pushNotification(message) {
+        $("#innerNotification").empty();
+        $("#innerNotification").append(message);
+        $('#notification').fadeIn("slow");
+    }
+
+    /* Validate the given url in specific format */
+    function isValidUrl(myURL) {
+        let pattern = new RegExp('^(https?:\\/\\/)' + //protocol
+            '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.?)+[a-z]{2,}|' + // domain
+            '((\\d{1,3}\\.){3}\\d{1,3}))' + // ip address
+            '(\\:\\d+)?' +  // port number
+            '(\\/[-a-z\\d%_.~+]*)*' + // path segments
+            '(\\?[;&amp;a-z\\d%_.~+=-]*)?' + //query string
+            '(\\#[-a-z\\d_]*)?$', 'i');  // fragment
+        return pattern.test(myURL);
+    }
+</script>

@@ -22,7 +22,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
         /// <summary>
         /// Initializes a new instance of the <see cref="BlobHelper"/> class.
         /// </summary>
-        /// <param name="connectionString">connection string of storage.</param>
+        /// <param name="connectionString">Connection string of storage.</param>
         public BlobHelper(string connectionString)
         {
             this.storageAccount = CloudStorageAccount.Parse(connectionString);
@@ -33,21 +33,22 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
         /// <summary>
         /// Upload blob
         /// </summary>
-        /// <param name="fileContents">contents of file to be uploaded.</param>
-        /// <param name="blobName">name of the blob</param>
-        /// <returns><see cref="Task"/> that represents upload operation.</returns>
+        /// <param name="fileContents">Contents of file to be uploaded.</param>
+        /// <param name="blobName">Name of the blob</param>
+        /// <returns><see cref="Task"/> That represents upload operation.</returns>
         public async Task<string> UploadBlobAsync(string fileContents, string blobName)
         {
             CloudBlockBlob cloudBlockBlob = this.cloudBlobContainer.GetBlockBlobReference(blobName);
             await cloudBlockBlob.UploadTextAsync(fileContents);
+
             return cloudBlockBlob.Uri.ToString();
         }
 
         /// <summary>
         /// Delete blob.
         /// </summary>
-        /// <param name="blobName">name of the blob to be deleted.</param>
-        /// <returns><see cref="Task"/> that represents the delete operation.</returns>
+        /// <param name="blobName">Name of the blob to be deleted.</param>
+        /// <returns><see cref="Task"/> That represents the delete operation.</returns>
         public async Task DeleteBlobAsync(string blobName)
         {
             CloudBlockBlob cloudBlockBlob = this.cloudBlobContainer.GetBlockBlobReference(blobName);

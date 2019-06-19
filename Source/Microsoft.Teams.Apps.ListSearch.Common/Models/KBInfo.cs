@@ -38,13 +38,13 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Models
         public string KBName { get; set; }
 
         /// <summary>
-        /// Gets or sets sharepoint url of the list
+        /// Gets or sets SharePoint url of the list
         /// </summary>
         [JsonProperty("SharePointUrl")]
         public string SharePointUrl { get; set; }
 
         /// <summary>
-        /// Gets or sets sharepoint site id.
+        /// Gets or sets SharePoint site id.
         /// </summary>
         [JsonProperty("SharePointSiteId")]
         public string SharePointSiteId { get; set; }
@@ -70,7 +70,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Models
         /// <summary>
         /// Gets or sets answer field
         /// </summary>
-        [JsonProperty("AnswerField")]
+        [JsonProperty("AnswerFields")]
         public string AnswerFields { get; set; }
 
         /// <summary>

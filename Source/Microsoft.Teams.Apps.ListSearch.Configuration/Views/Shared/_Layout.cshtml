@@ -52,5 +52,13 @@
     <div class="container body-content">
         @RenderBody()
     </div>
+    <div id="notification" style="display: none;">
+        <span class="dismiss"><a class="closeNotification" title="dismiss this notification">x</a></span>
+        <div id="innerNotification">
+        </div>
+    </div>
+    <div id="loader" class="loader">
+        <img src="~/Content/Images/loader.gif" class="loader-image" />
+    </div>
 </body>
 </html>

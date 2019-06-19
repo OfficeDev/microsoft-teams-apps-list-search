@@ -254,7 +254,6 @@
     <Content Include="Views\_ViewStart.cshtml" />
     <Content Include="Views\Shared\_Layout.cshtml" />
     <Content Include="Views\Home\Index.cshtml" />
-    <Content Include="Views\Shared\_LoginPartial.cshtml" />
     <Content Include="Views\Account\SignOutCallback.cshtml" />
     <Content Include="Views\Account\InvalidUser.cshtml" />
   </ItemGroup>
@@ -274,11 +273,17 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <SubType>Designer</SubType>
     </Content>
+    <None Include="packages.config" />
+    <Content Include="Views\Home\ConfigureList.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Connected Services\" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Microsoft.Teams.Apps.Common\Microsoft.Teams.Apps.Common.csproj">
+      <Project>{7FA2791F-E894-4876-8773-A5318631365C}</Project>
+      <Name>Microsoft.Teams.Apps.Common</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Microsoft.Teams.Apps.ListSearch.Common\Microsoft.Teams.Apps.ListSearch.Common.csproj">
       <Project>{20fa7b4d-0c91-421f-9675-5a43de20ba5a}</Project>
       <Name>Microsoft.Teams.Apps.ListSearch.Common</Name>

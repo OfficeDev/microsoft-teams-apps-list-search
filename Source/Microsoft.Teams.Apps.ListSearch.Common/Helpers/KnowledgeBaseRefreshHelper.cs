@@ -68,7 +68,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
 
                 do
                 {
-                    listContents = await this.GetListContents(kb.SharePointListId, kb.AnswerFields, questionColumn.Name, kb.SharePointSiteId, listContents?.ODataNextLink ?? null);
+                    listContents = await this.GetSharePointListContentsAsync(kb.SharePointListId, kb.AnswerFields, questionColumn.Name, kb.SharePointSiteId, listContents?.ODataNextLink ?? null);
 
                     string blobName = Guid.NewGuid().ToString() + JsonFileExtension;
                     string blobUrl = await this.blobHelper.UploadBlobAsync(JsonConvert.SerializeObject(listContents), blobName);
@@ -109,7 +109,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
         /// </summary>
         /// <param name="kbId">Id of KB to be refreshed</param>
         /// <param name="blobInfo">Details of source blob files</param>
-        /// <param name="questionField">question field</param>
+        /// <param name="questionField">Question field</param>
         /// <param name="blobHelper">Blob helper object</param>
         /// <returns>Task that represents refresh operation.</returns>
         private async Task UpdateKnowledgeBaseAsync(string kbId, Dictionary<string, Uri> blobInfo, string questionField, BlobHelper blobHelper)
@@ -117,14 +117,14 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
             QnAMakerService qnAMakerService = new QnAMakerService(this.httpClient, this.qnaMakerSubcriptionKey);
 
             this.logProvider.LogDebug($"Deleting existing KB sources");
-            bool deleteSourcesResult = await this.DeleteExistingSources(qnAMakerService, kbId);
+            bool deleteSourcesResult = await this.DeleteExistingKnowledgeBaseSourcesAsync(qnAMakerService, kbId);
 
             this.logProvider.LogDebug($"Adding new KB sources ({blobInfo.Count} files)");
             bool addSourcesResult = true;
             if (blobInfo.Count < 10)
             {
                 // Fewer than 10 files
-                addSourcesResult = await this.AddNewSources(kbId, blobInfo, questionField, qnAMakerService);
+                addSourcesResult = await this.AddNewKnowledgeBaseSourcesAsync(kbId, blobInfo, questionField, qnAMakerService);
             }
             else
             {
@@ -146,7 +146,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
 
                     // no more file left to include in batch
                     this.logProvider.LogDebug($"Adding next batch of sources");
-                    addSourcesResult = addSourcesResult && await this.AddNewSources(kbId, blobInfoBatch, questionField, qnAMakerService);
+                    addSourcesResult = addSourcesResult && await this.AddNewKnowledgeBaseSourcesAsync(kbId, blobInfoBatch, questionField, qnAMakerService);
                     blobInfoBatch.Clear();
 
                     if (filesExtracted < blobInfo.Count)
@@ -160,7 +160,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
                 if (blobInfoBatch.Count > 0)
                 {
                     this.logProvider.LogDebug($"Adding final batch of sources");
-                    addSourcesResult = addSourcesResult && await this.AddNewSources(kbId, blobInfoBatch, questionField, qnAMakerService);
+                    addSourcesResult = addSourcesResult && await this.AddNewKnowledgeBaseSourcesAsync(kbId, blobInfoBatch, questionField, qnAMakerService);
                 }
             }
 
@@ -177,10 +177,10 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
         /// <summary>
         /// Deletes sources from KB
         /// </summary>
-        /// <param name="qnAMakerService">instance qna maker service</param>
+        /// <param name="qnAMakerService">Instance qna maker service</param>
         /// <param name="kbId">Knowledge base ID</param>
-        /// <returns><see cref="Task"/> that resolves to a <see cref="bool"/> which represents success or failure of operation.</returns>
-        private async Task<bool> DeleteExistingSources(QnAMakerService qnAMakerService, string kbId)
+        /// <returns><see cref="Task"/> That resolves to a <see cref="bool"/> which represents success or failure of operation.</returns>
+        private async Task<bool> DeleteExistingKnowledgeBaseSourcesAsync(QnAMakerService qnAMakerService, string kbId)
         {
             GetKnowledgeBaseDetailsResponse kbDetails = await qnAMakerService.GetKnowledgeBaseDetails(kbId);
             UpdateKBRequest deleteSourcesRequest = new UpdateKBRequest()
@@ -194,18 +194,19 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
             string deleteSourcesResultState = await qnAMakerService.AwaitOperationCompletionState(deleteSourcesResult);
 
             this.logProvider.LogDebug($"Add operation completed with status {deleteSourcesResultState}");
+
             return qnAMakerService.IsOperationSuccessful(deleteSourcesResultState);
         }
 
         /// <summary>
         /// Adds new sources to the kb.
         /// </summary>
-        /// <param name="kbId">kb id</param>
+        /// <param name="kbId">Kb id</param>
         /// <param name="blobInfo"><see cref="Dictionary{TKey, TValue}"/> with keys as blob names and values as Uris of the corresponding blobs.</param>
-        /// <param name="questionField">question field</param>
-        /// <param name="qnAMakerService">instance of qna maker servcice</param>
-        /// <returns><see cref="Task"/> that resolves to a <see cref="bool"/> which represents success or failure of operation.</returns>
-        private async Task<bool> AddNewSources(string kbId, Dictionary<string, Uri> blobInfo, string questionField, QnAMakerService qnAMakerService)
+        /// <param name="questionField">Question field</param>
+        /// <param name="qnAMakerService">Instance of qna maker service</param>
+        /// <returns><see cref="Task"/> That resolves to a <see cref="bool"/> which represents success or failure of operation.</returns>
+        private async Task<bool> AddNewKnowledgeBaseSourcesAsync(string kbId, Dictionary<string, Uri> blobInfo, string questionField, QnAMakerService qnAMakerService)
         {
             List<File> files = new List<File>();
             foreach (var blobData in blobInfo)
@@ -237,19 +238,20 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
             string addSourcesResultState = await qnAMakerService.AwaitOperationCompletionState(addSourcesResult);
 
             this.logProvider.LogDebug($"Add operation completed with status {addSourcesResultState}");
+
             return qnAMakerService.IsOperationSuccessful(addSourcesResultState);
         }
 
         /// <summary>
-        /// Get the contents of the list.
+        /// Get the contents of the SharePoint list.
         /// </summary>
         /// <param name="listId">Id of the list to be fetched.</param>
         /// <param name="answerFields">Answer fields to be used for KB.</param>
-        /// <param name="questionField">question field.</param>
-        /// <param name="sharePointSiteId">site id of sharepoint site.</param>
-        /// <param name="odataNextUrl">odata next url</param>
-        /// <returns><see cref="Task"/> that resolves to <see cref="GetListContentsResponse"/> which represents the list response.</returns>
-        private async Task<GetListContentsResponse> GetListContents(string listId, string answerFields, string questionField, string sharePointSiteId, string odataNextUrl)
+        /// <param name="questionField">Question field.</param>
+        /// <param name="sharePointSiteId">Site id of SharePoint site.</param>
+        /// <param name="odataNextUrl">Odata next url</param>
+        /// <returns><see cref="Task"/> That resolves to <see cref="GetListContentsResponse"/> which represents the list response.</returns>
+        private async Task<GetListContentsResponse> GetSharePointListContentsAsync(string listId, string answerFields, string questionField, string sharePointSiteId, string odataNextUrl)
         {
             var fieldsToFetch = JsonConvert.DeserializeObject<List<ColumnInfo>>(answerFields)
                 .Select(field => field.Name)
@@ -260,6 +262,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
                 fieldsToFetch: fieldsToFetch,
                 sharePointSiteId: sharePointSiteId,
                 odataNextUrl: odataNextUrl);
+
             return JsonConvert.DeserializeObject<GetListContentsResponse>(responseBody);
         }
     }

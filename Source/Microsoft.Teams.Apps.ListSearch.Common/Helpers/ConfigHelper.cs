@@ -21,7 +21,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
         /// <summary>
         /// Initializes a new instance of the <see cref="ConfigHelper"/> class.
         /// </summary>
-        /// <param name="connectionString">connection string of storage.</param>
+        /// <param name="connectionString">Connection string of storage.</param>
         public ConfigHelper(string connectionString)
         {
             this.storageAccount = CloudStorageAccount.Parse(connectionString);

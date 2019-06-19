@@ -23,11 +23,11 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
     {
         private const string RefreshTokenGrantType = "refresh_token";
         private const string PartitionKey = "Token";
-        private const string TokenTableName = StorageInfo.TokenTableName;
         private const double TokenExpiryAllowanceInMinutes = 5;
         private const string Scope = "offline_access https://graph.microsoft.com/Sites.Read.All";
 
         private readonly CloudTableClient cloudTableClient;
+        private readonly CloudTable cloudTable;
         private readonly string tokenEndpoint;
         private readonly HttpClient httpClient;
         private readonly string clientId;
@@ -37,16 +37,17 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
         /// <summary>
         /// Initializes a new instance of the <see cref="TokenHelper"/> class.
         /// </summary>
-        /// <param name="httpClient">http client</param>
-        /// <param name="connectionString">connection string of storage.</param>
-        /// <param name="tenantId">tenant Id.</param>
-        /// <param name="clientId">client id of the auth app</param>
-        /// <param name="clientSecret">client secret for the app</param>
-        /// <param name="tokenKey">key used to secure the token</param>
+        /// <param name="httpClient">Http client</param>
+        /// <param name="connectionString">Connection string of storage.</param>
+        /// <param name="tenantId">Tenant Id.</param>
+        /// <param name="clientId">Client id of the auth app</param>
+        /// <param name="clientSecret">Client secret for the app</param>
+        /// <param name="tokenKey">Key used to secure the token</param>
         public TokenHelper(HttpClient httpClient, string connectionString, string tenantId, string clientId, string clientSecret, string tokenKey)
         {
             var storageAccount = CloudStorageAccount.Parse(connectionString);
             this.cloudTableClient = storageAccount.CreateCloudTableClient();
+            this.cloudTable = this.cloudTableClient.GetTableReference(StorageInfo.TokenTableName);
 
             this.httpClient = httpClient;
             this.tokenEndpoint = $"https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token";
@@ -74,9 +75,9 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
         /// <summary>
         /// To configure the user who have access to share point
         /// </summary>
-        /// <param name="userEmail">logged in user email</param>
+        /// <param name="userEmail">Logged in user email</param>
         /// <param name="accessToken">Authorization code</param>
-        /// <returns>token status</returns>
+        /// <returns>Token status</returns>
         public async Task<bool> SetSharePointUserAsync(string userEmail, string accessToken)
         {
             var content = new FormUrlEncodedContent(new[]
@@ -117,13 +118,12 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
         /// <summary>
         /// Gets token from storage.
         /// </summary>
-        /// <param name="tokenType">type of token to be retrieved.</param>
+        /// <param name="tokenType">Type of token to be retrieved.</param>
         /// <returns>TokenEntity</returns>
         public async Task<TokenEntity> GetTokenEntityAsync(string tokenType)
         {
-            CloudTable cloudTable = this.cloudTableClient.GetTableReference(TokenTableName);
             TableOperation retrieveOperation = TableOperation.Retrieve<TokenEntity>(PartitionKey, tokenType);
-            TableResult retrievedResult = await cloudTable.ExecuteAsync(retrieveOperation);
+            TableResult retrievedResult = await this.cloudTable.ExecuteAsync(retrieveOperation);
 
             return (TokenEntity)retrievedResult.Result;
         }
@@ -132,7 +132,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
         /// Refresh the token
         /// </summary>
         /// <param name="token">Token Entity</param>
-        /// <returns>returns refresh token entity</returns>
+        /// <returns>Returns refresh token entity</returns>
         private async Task<TokenEntity> RefreshTokenAsync(TokenEntity token)
         {
             var body = new FormUrlEncodedContent(new[]
@@ -173,20 +173,21 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
         /// <summary>
         /// Stores token to storage.
         /// </summary>
-        /// <param name="tokenEntity">entity to be stored.</param>
-        /// <returns><see cref="Task"/> that resolves to <see cref="TableResult"/></returns>
-        private Task<TableResult> StoreTokenEntityAsync(TokenEntity tokenEntity)
+        /// <param name="tokenEntity">Entity to be stored.</param>
+        /// <returns><see cref="Task"/> That resolves to <see cref="TableResult"/></returns>
+        private async Task<TableResult> StoreTokenEntityAsync(TokenEntity tokenEntity)
         {
-            CloudTable cloudTable = this.cloudTableClient.GetTableReference(TokenTableName);
+            CloudTable cloudTable = this.cloudTableClient.GetTableReference(StorageInfo.TokenTableName);
             TableOperation insertOperation = TableOperation.InsertOrMerge(tokenEntity);
-            return cloudTable.ExecuteAsync(insertOperation);
+
+            return await cloudTable.ExecuteAsync(insertOperation);
         }
 
         /// <summary>
         /// Encrypt Token.
         /// </summary>
         /// <param name="token">Token to be encrypted.</param>
-        /// <param name="key">key to be used for encryption and decryption.</param>
+        /// <param name="key">Key to be used for encryption and decryption.</param>
         /// <returns>Encrypted token.</returns>
         private string EncryptToken(string token, string key)
         {
@@ -215,7 +216,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
         /// Decrypt Token.
         /// </summary>
         /// <param name="token">Token to be decrypted.</param>
-        /// <param name="key">key to be used for decryption.</param>
+        /// <param name="key">Key to be used for decryption.</param>
         /// <returns>Decrypted token.</returns>
         private string DecryptToken(string token, string key)
         {

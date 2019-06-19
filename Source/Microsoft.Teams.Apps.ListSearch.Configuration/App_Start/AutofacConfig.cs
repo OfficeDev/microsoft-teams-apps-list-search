@@ -12,6 +12,8 @@ namespace Microsoft.Teams.Apps.ListSearch.Configuration
     using Autofac.Integration.Mvc;
     using Microsoft.ApplicationInsights;
     using Microsoft.ApplicationInsights.Extensibility;
+    using Microsoft.Teams.Apps.Common.Configuration;
+    using Microsoft.Teams.Apps.Common.Logging;
     using Microsoft.Teams.Apps.ListSearch.Common.Helpers;
     using Microsoft.Teams.Apps.ListSearch.Configuration.Controllers;
 
@@ -34,12 +36,20 @@ namespace Microsoft.Teams.Apps.ListSearch.Configuration
                 return new TelemetryClient(new TelemetryConfiguration(ConfigurationManager.AppSettings["ApplicationInsightsInstrumentationKey"]));
             }).SingleInstance();
 
+            var config = new LocalConfigProvider();
+
+            builder.Register(c => config)
+                .As<IConfigProvider>()
+                .SingleInstance();
+
+            builder.Register(c => new AppInsightsLogProvider(c.Resolve<IConfigProvider>()))
+               .As<ILogProvider>()
+               .SingleInstance();
+
             builder.Register(c => new HttpClient())
-                .As<HttpClient>()
                 .SingleInstance();
 
             builder.Register(c => new KBInfoHelper(ConfigurationManager.AppSettings["StorageConnectionString"]))
-                .As<KBInfoHelper>()
                 .SingleInstance();
 
             builder.Register(c => new TokenHelper(
@@ -49,7 +59,29 @@ namespace Microsoft.Teams.Apps.ListSearch.Configuration
                 ConfigurationManager.AppSettings["GraphAppClientId"],
                 ConfigurationManager.AppSettings["GraphAppClientSecret"],
                 ConfigurationManager.AppSettings["TokenEncryptionKey"]))
-                .As<TokenHelper>()
+                .SingleInstance();
+
+            builder.Register(c => new GraphHelper(
+                c.Resolve<HttpClient>(),
+                c.Resolve<TokenHelper>()))
+                .SingleInstance();
+
+            builder.Register(c => new QnAMakerService(
+                c.Resolve<HttpClient>(),
+                ConfigurationManager.AppSettings["QnAMakerSubscriptionKey"]))
+                .SingleInstance();
+
+            builder.Register(c => new BlobHelper(
+                ConfigurationManager.AppSettings["StorageConnectionString"]))
+                .SingleInstance();
+
+            builder.Register(c => new KnowledgeBaseRefreshHelper(
+                c.Resolve<HttpClient>(),
+                c.Resolve<BlobHelper>(),
+                c.Resolve<KBInfoHelper>(),
+                c.Resolve<GraphHelper>(),
+                ConfigurationManager.AppSettings["QnAMakerSubscriptionKey"],
+                c.Resolve<ILogProvider>()))
                 .SingleInstance();
 
             builder.RegisterType<HomeController>().InstancePerRequest();
