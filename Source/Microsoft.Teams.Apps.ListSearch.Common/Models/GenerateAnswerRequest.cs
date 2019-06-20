@@ -15,10 +15,13 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Models
         /// </summary>
         /// <param name="question">Question asked by the user</param>
         /// <param name="top">Number of results to be fetched</param>
-        public GenerateAnswerRequest(string question, int top)
+        /// <param name="score">Score to filter the search result</param>
+        public GenerateAnswerRequest(string question, int top, int score)
         {
             this.Question = question;
             this.Top = top;
+            this.ScoreThreshold = score;
+            this.RankerType = "QuestionOnly";
         }
 
         /// <summary>
@@ -32,5 +35,17 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Models
         /// </summary>
         [JsonProperty("top")]
         public int Top { get; set; }
+
+        /// <summary>
+        /// Gets or sets ScoreTherhold
+        /// </summary>
+        [JsonProperty("scoreThreshold")]
+        public int ScoreThreshold { get; set; }
+
+        /// <summary>
+        /// Gets or sets Ranker type
+        /// </summary>
+        [JsonProperty("RankerType")]
+        public string RankerType { get; set; }
     }
 }

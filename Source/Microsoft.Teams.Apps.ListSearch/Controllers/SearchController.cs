@@ -26,6 +26,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
         private readonly System.Net.Http.HttpClient httpClient;
         private readonly JwtHelper jwtHelper;
         private readonly int topResultsToBeFetched = 5;
+        private readonly int minimumConfidenceScore;
         private readonly string tenantId;
         private readonly string connectionString;
         private readonly ILogProvider logProvider;
@@ -42,6 +43,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
             this.jwtHelper = jwtHelper;
             this.tenantId = ConfigurationManager.AppSettings["TenantId"];
             this.connectionString = ConfigurationManager.AppSettings["StorageConnectionString"];
+            this.minimumConfidenceScore = Convert.ToInt32(ConfigurationManager.AppSettings["MinimumConfidenceScore"]);
             this.logProvider = logProvider;
         }
 
@@ -85,8 +87,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
             var hostUrl = ConfigurationManager.AppSettings["QnAMakerHostUrl"];
             QnAMakerService qnaMakerHelper = new QnAMakerService(this.httpClient, subscriptionKey, hostUrl);
 
-            int top = this.topResultsToBeFetched;
-            GenerateAnswerRequest generateAnswerRequest = new GenerateAnswerRequest(searchedKeyword, top);
+            GenerateAnswerRequest generateAnswerRequest = new GenerateAnswerRequest(searchedKeyword, this.topResultsToBeFetched, this.minimumConfidenceScore);
             GenerateAnswerResponse result = await qnaMakerHelper.GenerateAnswerAsync(kbId, generateAnswerRequest);
 
             List<SelectedSearchResult> selectedSearchResults = new List<SelectedSearchResult>();

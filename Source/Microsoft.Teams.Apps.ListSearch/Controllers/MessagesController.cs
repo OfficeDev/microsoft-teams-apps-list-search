@@ -36,6 +36,8 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
 
         private readonly JwtHelper jwtHelper;
         private readonly ILogProvider logProvider;
+        private readonly int jwtLifetimeInMinutes;
+        private readonly string appBaseDomain;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MessagesController"/> class.
@@ -46,6 +48,8 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
         {
             this.jwtHelper = jwtHelper;
             this.logProvider = logProvider;
+            this.jwtLifetimeInMinutes = Convert.ToInt32(ConfigurationManager.AppSettings["JwtLifetimeInMinutes"]);
+            this.appBaseDomain = ConfigurationManager.AppSettings["AppBaseDomain"];
         }
 
         /// <summary>
@@ -69,17 +73,18 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
             }
         }
 
+        // Handle incoming invoke activities
         private HttpResponseMessage HandleInvokeActivity(Activity activity)
         {
             if (activity.Name == "composeExtension/fetchTask")
             {
                 string user = activity.From.Id;
                 string tenant = activity.GetTenantId();
-                string jwt = this.jwtHelper.GenerateJWT(activity.From.Id, activity.From.Properties["aadObjectId"].ToString(), activity.GetTenantId(), Convert.ToInt32(ConfigurationManager.AppSettings["JwtLifetimeInMinutes"]));
+                string jwt = this.jwtHelper.GenerateJWT(activity.From.Id, activity.From.Properties["aadObjectId"].ToString(), activity.GetTenantId(), this.jwtLifetimeInMinutes);
 
                 TaskInfo taskInfo = new TaskInfo()
                 {
-                    Url = $"https://{ConfigurationManager.AppSettings["AppBaseDomain"]}/search/search?token={jwt}&theme={{theme}}",
+                    Url = $"https://{this.appBaseDomain}/search/search?token={jwt}&theme={{theme}}",
                     Title = Strings.MessagingExtensionTitle,
                     Width = WidthInPixels,
                     Height = HeightInPixels,
@@ -109,9 +114,6 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
                         Value = Convert.ToString(child.Answer),
                     });
                 }
-
-                string sharePointUrl = selectedSearchResult.SharePointURL;
-                sharePointUrl = sharePointUrl.Replace("AllItems.aspx", $"DispForm.aspx?ID={selectedSearchResult.Id}");
 
                 AdaptiveCard card = new AdaptiveCard(AdaptiveCardVersion)
                 {
@@ -145,7 +147,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
                     {
                         new AdaptiveOpenUrlAction()
                         {
-                            Url = new Uri(sharePointUrl),
+                            Url = new Uri(this.CreateListItemUrl(selectedSearchResult.SharePointURL, selectedSearchResult.Id)),
                             Title = Strings.ResultCardButtonTitle,
                         },
                     },
@@ -172,10 +174,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
             return new HttpResponseMessage(HttpStatusCode.Accepted);
         }
 
-        /// <summary>
-        /// Log telemetry about the incoming activity.
-        /// </summary>
-        /// <param name="activity">The activity</param>
+        // Log telemetry about the incoming activity.
         private void LogActivityTelemetry(Activity activity)
         {
             var fromObjectId = activity.From?.Properties["aadObjectId"]?.ToString();
@@ -198,6 +197,20 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
                 { "Platform", clientInfoEntity?.Properties["platform"]?.ToString() },
             };
             this.logProvider.LogEvent("UserActivity", properties);
+        }
+
+        // Create URL to a SharePoint list item
+        private string CreateListItemUrl(string listUrl, string itemId)
+        {
+            var finalSlashIndex = listUrl.LastIndexOf('/');
+            if (finalSlashIndex > 0)
+            {
+                return listUrl.Substring(0, finalSlashIndex) + "/DispForm.aspx?ID=" + itemId;
+            }
+            else
+            {
+                return listUrl;
+            }
         }
     }
 }
