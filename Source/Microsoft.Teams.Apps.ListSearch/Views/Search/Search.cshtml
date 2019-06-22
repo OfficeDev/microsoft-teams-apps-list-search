@@ -194,39 +194,24 @@
         // Handle click on a search result
         function listItemClick(answer, question, id) {
             var payload = {
+                kbId: selectedKbId,
                 answer: answer,
                 question: question,
                 id: id,
             }
-            $.ajax({
+             $.ajax({
                 type: "POST",
-                url: '@Url.Action("SetClickedItem")',
+                url: '@Url.Action("ResultCardPartial")',
                 data: payload,
-                dataType: "json",
                 beforeSend: function (request) {
                     request.setRequestHeader("Authorization", "bearer " + token);
                 },
-                success: function () {
-                    $.ajax({
-                        type: "GET",
-                        url: '@Url.Action("ResultCardPartial")',
-                        data: { kbId: selectedKbId },
-                        beforeSend: function (request) {
-                            request.setRequestHeader("Authorization", "bearer " + token);
-                        },
-                        success: function (result) {
-                            $("#searchPanel").hide();
-                            $("#resultPanel").show();
+                success: function (result) {
+                    $("#searchPanel").hide();
+                    $("#resultPanel").show();
 
-                            $("#resultCardViewContainer").html(result);
-                            $("#searchTerm").text(currentSearchText);
-                        },
-                        error: function () {
-                            $("#loader").hide();
-                            $("#resultsList").hide();
-                            $("#resultsError").show();
-                        }
-                    });
+                    $("#resultCardViewContainer").html(result);
+                    $("#searchTerm").text(currentSearchText);
                 },
                 error: function () {
                     $("#loader").hide();
@@ -250,7 +235,7 @@
         // Share the selected card
         function shareCard(card) {
             microsoftTeams.tasks.submitTask(card);
-        }       
+        }
     </script>
 </body>
 </html>

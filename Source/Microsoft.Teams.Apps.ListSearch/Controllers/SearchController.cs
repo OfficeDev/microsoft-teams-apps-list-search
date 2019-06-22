@@ -124,47 +124,26 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
         /// Result Card Partial View
         /// </summary>
         /// <param name="kbId">kd id</param>
+        /// <param name="answer">answer string</param>
+        /// <param name="question">question string</param>
+        /// <param name="id">id of selected item</param>
         /// <returns><see cref="PartialViewResult"/> representing Result card partial view.</returns>
         [HandleError]
         [JwtExceptionFilter]
-        public PartialViewResult ResultCardPartial(string kbId)
+        public PartialViewResult ResultCardPartial(string kbId, string answer, string question, string id)
         {
-            string selectedAnswer = Convert.ToString(this.Session["selectdAnswer"]);
-            string selectedQuestion = Convert.ToString(this.Session["selectedQuestion"]);
-            string selectedItemId = Convert.ToString(this.Session["selectedItemId"]);
-
-            List<DeserializedAnswer> answers = JsonConvert.DeserializeObject<List<DeserializedAnswer>>(selectedAnswer);
+            List<DeserializedAnswer> answers = JsonConvert.DeserializeObject<List<DeserializedAnswer>>(answer);
 
             SelectedSearchResult selectedSearchResult = new SelectedSearchResult()
             {
                 KBId = kbId,
-                Question = selectedQuestion,
+                Question = question,
                 Answers = answers,
-                Id = selectedItemId,
+                Id = id,
                 SharePointURL = this.Session["SharePointUrl"].ToString(),
             };
 
             return this.PartialView(selectedSearchResult);
-        }
-
-        /// <summary>
-        /// Sets selected answer and question
-        /// </summary>
-        /// <param name="answer">answer string</param>
-        /// <param name="question">question string</param>
-        /// <param name="id">id of selected item</param>
-        /// <returns><see cref="JsonResult"/> denoting success</returns>
-        [HttpPost]
-        [HandleError]
-        [JwtExceptionFilter]
-        public JsonResult SetClickedItem(string answer, string question, string id)
-        {
-            this.ValidateAuthorizationHeader();
-
-            this.Session["selectdAnswer"] = answer;
-            this.Session["selectedQuestion"] = question;
-            this.Session["selectedItemId"] = id;
-            return this.Json("success");
         }
 
         // Validate the incoming JWT
