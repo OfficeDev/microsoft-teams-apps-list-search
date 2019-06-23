@@ -1,0 +1,51 @@
+{
+  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.4/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.4",
+  "version": "1.0.0",
+  "id": "53be03ee-7339-4d0b-b4dc-124336355ea1",
+  "packageName": "com.microsoft.teams.listsearch",
+  "developer": {
+    "name": "<company name>",
+    "websiteUrl": "<website url>",
+    "privacyUrl": "<privacy url>",
+    "termsOfUseUrl": "<terms of use url>"
+  },
+  "icons": {
+    "color": "color.png",
+    "outline": "outline.png"
+  },
+  "name": {
+    "short": "List Search"
+  },
+  "description": {
+    "short": "Search and share individual records in a SharePoint list",
+    "full": "Search for an item in a SharePoint list and contextually share it within a conversation"
+  },
+  "accentColor": "#64A2CC",
+  "composeExtensions": [
+    {
+      "botId": "<bot id>",
+      "canUpdateConfiguration": false,
+      "commands": [
+        {
+          "id": "fetchLists",
+          "description": "Search lists",
+          "title": "Search lists",
+          "type": "action",
+          "fetchTask": true,
+          "parameters": [
+            {
+              "name": "param1",
+              "title": "param1"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "permissions": [
+  ],
+  "validDomains": [
+    "<app domain>"
+  ]
+}
