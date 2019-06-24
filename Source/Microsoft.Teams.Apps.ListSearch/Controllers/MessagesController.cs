@@ -153,18 +153,22 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
                     },
                 };
 
-                Attachment attachment = new Attachment()
+                var result = new Attachment()
                 {
                     Content = card,
                     ContentType = AdaptiveCard.ContentType,
+                };
+                var preview = new ThumbnailCard
+                {
+                    Title = selectedSearchResult.Question,
                 };
 
                 ComposeExtensionResponse composeExtensionResponse = new ComposeExtensionResponse()
                 {
                     ComposeExtension = new ComposeExtensionResult()
                     {
-                        Attachments = new List<ComposeExtensionAttachment>() { attachment.ToComposeExtensionAttachment() },
-                        Type = ComposeExtensionResultType.TaskResult,
+                        Attachments = new List<ComposeExtensionAttachment>() { result.ToComposeExtensionAttachment(preview.ToAttachment()) },
+                        Type = ComposeExtensionResultType.Result,
                         AttachmentLayout = AttachmentLayoutTypes.List,
                     },
                 };

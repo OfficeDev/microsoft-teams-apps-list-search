@@ -5,18 +5,18 @@
 namespace Microsoft.Teams.Apps.ListSearch.Models
 {
     /// <summary>
-    /// Task Types
+    /// Messaging Extension result types
     /// </summary>
     public static class ComposeExtensionResultType
     {
         /// <summary>
-        /// Continue task type
+        /// Continue task
         /// </summary>
         public static readonly string TaskContinue = "continue";
 
         /// <summary>
-        /// Result task type
+        /// Result
         /// </summary>
-        public static readonly string TaskResult = "result";
+        public static readonly string Result = "result";
     }
 }
