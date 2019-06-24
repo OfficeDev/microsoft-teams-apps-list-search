@@ -10,8 +10,6 @@ namespace Microsoft.Teams.Apps.ListSearch.Configuration
     using System.Web.Mvc;
     using Autofac;
     using Autofac.Integration.Mvc;
-    using Microsoft.ApplicationInsights;
-    using Microsoft.ApplicationInsights.Extensibility;
     using Microsoft.Teams.Apps.Common.Configuration;
     using Microsoft.Teams.Apps.Common.Logging;
     using Microsoft.Teams.Apps.ListSearch.Common.Helpers;
@@ -30,11 +28,6 @@ namespace Microsoft.Teams.Apps.ListSearch.Configuration
         {
             var builder = new ContainerBuilder();
             builder.RegisterControllers(Assembly.GetExecutingAssembly());
-
-            builder.Register(c =>
-            {
-                return new TelemetryClient(new TelemetryConfiguration(ConfigurationManager.AppSettings["ApplicationInsightsInstrumentationKey"]));
-            }).SingleInstance();
 
             var config = new LocalConfigProvider();
 
@@ -76,11 +69,10 @@ namespace Microsoft.Teams.Apps.ListSearch.Configuration
                 .SingleInstance();
 
             builder.Register(c => new KnowledgeBaseRefreshHelper(
-                c.Resolve<HttpClient>(),
                 c.Resolve<BlobHelper>(),
                 c.Resolve<KBInfoHelper>(),
                 c.Resolve<GraphHelper>(),
-                ConfigurationManager.AppSettings["QnAMakerSubscriptionKey"],
+                c.Resolve<QnAMakerService>(),
                 c.Resolve<ILogProvider>()))
                 .SingleInstance();
 

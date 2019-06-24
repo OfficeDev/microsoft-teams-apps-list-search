@@ -12,6 +12,6 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Models
         /// <summary>
         /// Token of type Graph.
         /// </summary>
-        public static readonly string GraphTokenType = "Graph";
+        public const string GraphTokenType = "Graph";
     }
 }

@@ -71,7 +71,6 @@
     <Compile Include="Constants.cs" />
     <Compile Include="Helpers\BlobHelper.cs" />
     <Compile Include="Helpers\CamelCaseExceptDictionaryKeysResolver.cs" />
-    <Compile Include="Helpers\ConfigHelper.cs" />
     <Compile Include="Helpers\GraphHelper.cs" />
     <Compile Include="Helpers\IQnAMakerService.cs" />
     <Compile Include="Helpers\JwtHelper.cs" />
@@ -82,7 +81,6 @@
     <Compile Include="Models\Add.cs" />
     <Compile Include="Models\ColumnInfo.cs" />
     <Compile Include="Models\ColumnMapping.cs" />
-    <Compile Include="Models\ConfigEntity.cs" />
     <Compile Include="Models\CreateKBRequest.cs" />
     <Compile Include="Models\Delete.cs" />
     <Compile Include="Models\DeserializedAnswer.cs" />
@@ -104,8 +102,6 @@
     <Compile Include="Models\SelectedSearchResult.cs" />
     <Compile Include="Models\GenerateAnswerRequest.cs" />
     <Compile Include="Models\GenerateAnswerResponse.cs" />
-    <Compile Include="Models\GetKnowledgeBaseResponse.cs" />
-    <Compile Include="Models\KnowledgeBase.cs" />
     <Compile Include="Models\QnAAnswer.cs" />
     <Compile Include="Models\StorageInfo.cs" />
     <Compile Include="Models\TokenEntity.cs" />

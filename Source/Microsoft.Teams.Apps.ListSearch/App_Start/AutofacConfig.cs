@@ -31,8 +31,9 @@ namespace Microsoft.Teams.Apps.ListSearch
             builder.RegisterControllers(Assembly.GetExecutingAssembly());
             builder.RegisterApiControllers(Assembly.GetExecutingAssembly());
 
-            var config = new LocalConfigProvider();
+            var connectionString = ConfigurationManager.AppSettings["StorageConnectionString"];
 
+            var config = new LocalConfigProvider();
             builder.Register(c => config)
                 .As<IConfigProvider>()
                 .SingleInstance();
@@ -47,6 +48,35 @@ namespace Microsoft.Teams.Apps.ListSearch
             builder.Register(c => new JwtHelper(
                 jwtSecurityKey: ConfigurationManager.AppSettings["TokenEncryptionKey"],
                 botId: ConfigurationManager.AppSettings["MicrosoftAppId"]))
+                .SingleInstance();
+
+            builder.Register(c => new KBInfoHelper(connectionString))
+                .SingleInstance();
+
+            builder.Register(c => new TokenHelper(
+                c.Resolve<HttpClient>(),
+                connectionString,
+                ConfigurationManager.AppSettings["TenantId"],
+                ConfigurationManager.AppSettings["GraphAppClientId"],
+                ConfigurationManager.AppSettings["GraphAppClientSecret"],
+                ConfigurationManager.AppSettings["TokenEncryptionKey"]))
+                .SingleInstance();
+
+            builder.Register(c => new BlobHelper(connectionString))
+                .SingleInstance();
+
+            builder.Register(c => new QnAMakerService(
+                c.Resolve<HttpClient>(),
+                ConfigurationManager.AppSettings["QnAMakerSubscriptionKey"],
+                ConfigurationManager.AppSettings["QnAMakerHostUrl"]))
+                .SingleInstance();
+
+            builder.Register(c => new KnowledgeBaseRefreshHelper(
+                c.Resolve<BlobHelper>(),
+                c.Resolve<KBInfoHelper>(),
+                c.Resolve<GraphHelper>(),
+                c.Resolve<QnAMakerService>(),
+                c.Resolve<ILogProvider>()))
                 .SingleInstance();
 
             var container = builder.Build();

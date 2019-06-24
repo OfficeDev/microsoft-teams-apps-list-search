@@ -6,8 +6,6 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
 {
     using System;
     using System.Collections.Generic;
-    using System.Configuration;
-    using System.Net.Http;
     using System.Threading.Tasks;
     using System.Web.Http;
     using Microsoft.Teams.Apps.Common.Extensions;
@@ -28,23 +26,13 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
         /// <summary>
         /// Initializes a new instance of the <see cref="RefreshController"/> class.
         /// </summary>
-        /// <param name="httpClient">Http client to be used.</param>
+        /// <param name="kbInfoHelper">KB helper to use</param>
+        /// <param name="refreshHelper">KB refresh helper to use</param>
         /// <param name="logProvider">Log provider to be used</param>
-        public RefreshController(HttpClient httpClient, ILogProvider logProvider)
+        public RefreshController(KBInfoHelper kbInfoHelper, KnowledgeBaseRefreshHelper refreshHelper, ILogProvider logProvider)
         {
-            var connectionString = ConfigurationManager.AppSettings["StorageConnectionString"];
-            var blobHelper = new BlobHelper(connectionString);
-
-            string tenantId = ConfigurationManager.AppSettings["TenantId"];
-            string appId = ConfigurationManager.AppSettings["GraphAppClientId"];
-            string appSecret = ConfigurationManager.AppSettings["GraphAppClientSecret"];
-            string tokenKey = ConfigurationManager.AppSettings["TokenEncryptionKey"];
-            var tokenHelper = new TokenHelper(httpClient, connectionString, tenantId, appId, appSecret, tokenKey);
-            var graphHelper = new GraphHelper(httpClient, tokenHelper);
-            var subscriptionKey = ConfigurationManager.AppSettings["QnAMakerSubscriptionKey"];
-
-            this.kbInfoHelper = new KBInfoHelper(connectionString);
-            this.refreshHelper = new KnowledgeBaseRefreshHelper(httpClient, blobHelper, this.kbInfoHelper, graphHelper, subscriptionKey, logProvider);
+            this.kbInfoHelper = kbInfoHelper;
+            this.refreshHelper = refreshHelper;
             this.logProvider = logProvider;
         }
 

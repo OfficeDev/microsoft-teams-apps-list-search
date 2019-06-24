@@ -221,12 +221,15 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
             else
             {
                 var details = new StringBuilder();
-                foreach (var detail in response.ErrorResponse.Error.Details)
+                if (response?.ErrorResponse?.Error?.Details != null)
                 {
-                    details.AppendLine(detail.Message);
+                    foreach (var detail in response.ErrorResponse.Error.Details)
+                    {
+                        details.AppendLine(detail.Message);
+                    }
                 }
 
-                throw new Exception($"Error Code: {response.ErrorResponse.Error.Code}\nError Message: {response.ErrorResponse.Error.Message}\nError Details: {details.ToString()}");
+                throw new Exception($"Error Code: {response?.ErrorResponse?.Error?.Code}\nError Message: {response?.ErrorResponse?.Error?.Message}\nError Details: {details.ToString()}");
             }
         }
 

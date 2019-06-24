@@ -23,28 +23,29 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
     /// </summary>
     public class SearchController : Controller
     {
-        private readonly System.Net.Http.HttpClient httpClient;
         private readonly JwtHelper jwtHelper;
         private readonly int topResultsToBeFetched = 5;
         private readonly int minimumConfidenceScore;
         private readonly string tenantId;
-        private readonly string connectionString;
         private readonly ILogProvider logProvider;
+        private readonly KBInfoHelper kbInfoHelper;
+        private readonly QnAMakerService qnaMakerService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SearchController"/> class.
         /// </summary>
-        /// <param name="httpClient">Http client to be used.</param>
         /// <param name="jwtHelper">JWT Helper.</param>
+        /// <param name="kbInfoHelper">KB helper to use</param>
+        /// <param name="qnaMakerService">QnA Maker service to use</param>
         /// <param name="logProvider">Log provider to use</param>
-        public SearchController(System.Net.Http.HttpClient httpClient, JwtHelper jwtHelper, ILogProvider logProvider)
+        public SearchController(JwtHelper jwtHelper, KBInfoHelper kbInfoHelper, QnAMakerService qnaMakerService,  ILogProvider logProvider)
         {
-            this.httpClient = httpClient;
             this.jwtHelper = jwtHelper;
             this.tenantId = ConfigurationManager.AppSettings["TenantId"];
-            this.connectionString = ConfigurationManager.AppSettings["StorageConnectionString"];
-            this.minimumConfidenceScore = Convert.ToInt32(ConfigurationManager.AppSettings["MinimumConfidenceScore"]);
+            this.kbInfoHelper = kbInfoHelper;
+            this.qnaMakerService = qnaMakerService;
             this.logProvider = logProvider;
+            this.minimumConfidenceScore = Convert.ToInt32(ConfigurationManager.AppSettings["MinimumConfidenceScore"]);
         }
 
         /// <summary>
@@ -60,8 +61,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
 
             this.ViewData["token"] = token;
 
-            KBInfoHelper kBInfoHelper = new KBInfoHelper(this.connectionString);
-            List<KBInfo> kbList = await kBInfoHelper.GetAllKBs(new string[] { nameof(KBInfo.KBName), nameof(KBInfo.KBId), nameof(KBInfo.QuestionField), nameof(KBInfo.AnswerFields) });
+            var kbList = await this.kbInfoHelper.GetAllKBs(new string[] { nameof(KBInfo.KBName), nameof(KBInfo.KBId), nameof(KBInfo.QuestionField), nameof(KBInfo.AnswerFields) });
 
             return this.View(kbList);
         }
@@ -80,40 +80,28 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
 
             this.ViewData["searchKeyword"] = searchedKeyword;
 
-            KBInfoHelper kbInfoHelper = new KBInfoHelper(this.connectionString);
-            KBInfo kbInfo = await kbInfoHelper.GetKBInfo(kbId);
-
-            var subscriptionKey = ConfigurationManager.AppSettings["QnAMakerSubscriptionKey"];
-            var hostUrl = ConfigurationManager.AppSettings["QnAMakerHostUrl"];
-            QnAMakerService qnaMakerHelper = new QnAMakerService(this.httpClient, subscriptionKey, hostUrl);
-
-            GenerateAnswerRequest generateAnswerRequest = new GenerateAnswerRequest(searchedKeyword, this.topResultsToBeFetched, this.minimumConfidenceScore);
-            GenerateAnswerResponse result = await qnaMakerHelper.GenerateAnswerAsync(kbId, generateAnswerRequest);
-
-            List<SelectedSearchResult> selectedSearchResults = new List<SelectedSearchResult>();
-
+            var kbInfo = await this.kbInfoHelper.GetKBInfo(kbId);
             this.Session["SharePointUrl"] = kbInfo.SharePointUrl;
 
-            // To check if answers list has some values or not. If it has some values then proceed
-            if (result != null)
-            {
-                // If answers value score is not equal to 0.0 and then no need to proceed
-                if (result.Answers.Count > 0 && result.Answers[0].Score != 0.0)
-                {
-                    foreach (QnAAnswer item in result.Answers)
-                    {
-                        List<ColumnInfo> answerFields = JsonConvert.DeserializeObject<List<ColumnInfo>>(kbInfo.AnswerFields);
-                        JObject answerObj = JsonConvert.DeserializeObject<JObject>(item.Answer);
-                        List<DeserializedAnswer> answers = this.DeserializeAnswers(answerObj, answerFields);
+            var generateAnswerRequest = new GenerateAnswerRequest(searchedKeyword, this.topResultsToBeFetched, this.minimumConfidenceScore);
+            var result = await this.qnaMakerService.GenerateAnswerAsync(kbId, generateAnswerRequest);
 
-                        selectedSearchResults.Add(new SelectedSearchResult()
-                        {
-                            KBId = kbId,
-                            Question = item.Questions[0],
-                            Answers = answers,
-                            Id = answerObj["id"].ToString(),
-                        });
-                    }
+            List<SelectedSearchResult> selectedSearchResults = new List<SelectedSearchResult>();
+            if (result?.Answers != null)
+            {
+                foreach (QnAAnswer item in result.Answers)
+                {
+                    List<ColumnInfo> answerFields = JsonConvert.DeserializeObject<List<ColumnInfo>>(kbInfo.AnswerFields);
+                    JObject answerObj = JsonConvert.DeserializeObject<JObject>(item.Answer);
+                    List<DeserializedAnswer> answers = this.DeserializeAnswers(answerObj, answerFields);
+
+                    selectedSearchResults.Add(new SelectedSearchResult()
+                    {
+                        KBId = kbId,
+                        Question = item.Questions[0],
+                        Answers = answers,
+                        Id = answerObj["id"].ToString(),
+                    });
                 }
             }
 

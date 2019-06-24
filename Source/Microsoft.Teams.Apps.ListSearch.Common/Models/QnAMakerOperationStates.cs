@@ -12,46 +12,46 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Models
         /// <summary>
         /// Not Started
         /// </summary>
-        public static readonly string NotStarted = "NotStarted";
+        public const string NotStarted = "NotStarted";
 
         /// <summary>
         /// Running
         /// </summary>
-        public static readonly string Running = "Running";
+        public const string Running = "Running";
 
         /// <summary>
         /// Succeeded
         /// </summary>
-        public static readonly string Succeeded = "Succeeded";
+        public const string Succeeded = "Succeeded";
 
         /// <summary>
         /// Failed
         /// </summary>
-        public static readonly string Failed = "Failed";
+        public const string Failed = "Failed";
 
         /// <summary>
         /// Bad Argument
         /// </summary>
-        public static readonly string BadArgument = "BadArgument";
+        public const string BadArgument = "BadArgument";
 
         /// <summary>
         /// Unauthorized
         /// </summary>
-        public static readonly string Unauthorized = "Unauthorized";
+        public const string Unauthorized = "Unauthorized";
 
         /// <summary>
         /// Forbidden
         /// </summary>
-        public static readonly string Forbidden = "Forbidden";
+        public const string Forbidden = "Forbidden";
 
         /// <summary>
         /// NotFound
         /// </summary>
-        public static readonly string NotFound = "NotFound";
+        public const string NotFound = "NotFound";
 
         /// <summary>
         /// Unspecified
         /// </summary>
-        public static readonly string Unspecified = "Unspecified";
+        public const string Unspecified = "Unspecified";
     }
 }

@@ -12,11 +12,11 @@ namespace Microsoft.Teams.Apps.ListSearch.Models
         /// <summary>
         /// Continue task
         /// </summary>
-        public static readonly string TaskContinue = "continue";
+        public const string TaskContinue = "continue";
 
         /// <summary>
         /// Result
         /// </summary>
-        public static readonly string Result = "result";
+        public const string Result = "result";
     }
 }
