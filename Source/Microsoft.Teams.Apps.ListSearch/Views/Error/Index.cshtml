@@ -5,12 +5,12 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width" />
-    <title>Unauthorized</title>
+    <title>@ViewBag.Title</title>
     @Styles.Render("~/Content/css")
 </head>
 <body>
     <div class="flex-column">
-        <span class="flex-column applicationError">You do not have access to view this page.</span>
-</div>
+        <span class="flex-column applicationError">@ViewBag.Message</span>
+    </div>
 </body>
 </html>

@@ -117,13 +117,29 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="KBIdNotFound" xml:space="preserve">
-    <value>KB Unknown</value>
-    <comment>String to serve as KB Id if KBId can't be retrieved from Session.</comment>
+  <data name="ErrorGenericMessage" xml:space="preserve">
+    <value>Sorry, something unexpected happened. Please try again.</value>
+    <comment>Message for generic error</comment>
   </data>
-  <data name="KBNameNotFound" xml:space="preserve">
-    <value>KB Unknown</value>
-    <comment>String to serve as KB Name if KBName can't be retrieved from Session.</comment>
+  <data name="ErrorGenericTitle" xml:space="preserve">
+    <value>Error</value>
+    <comment>Title for generic error</comment>
+  </data>
+  <data name="ErrorSessionExpiredMessage" xml:space="preserve">
+    <value>Your search session has expired. Please relaunch the app and try your search again.</value>
+    <comment>Message for session expired error</comment>
+  </data>
+  <data name="ErrorSessionExpiredTitle" xml:space="preserve">
+    <value>Session expired</value>
+    <comment>Title for session expired error</comment>
+  </data>
+  <data name="ErrorUnauthorizedMessage" xml:space="preserve">
+    <value>You do not have access to view this page.</value>
+    <comment>Message for unauthorized error</comment>
+  </data>
+  <data name="ErrorUnauthorizedTitle" xml:space="preserve">
+    <value>Unauthorized</value>
+    <comment>Title for unauthorized error</comment>
   </data>
   <data name="MessagingExtensionTitle" xml:space="preserve">
     <value>Find information and share with your team</value>

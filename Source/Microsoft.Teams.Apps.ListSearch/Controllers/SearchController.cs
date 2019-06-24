@@ -53,15 +53,21 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
         /// </summary>
         /// <param name="token">jwt auth token.</param>
         /// <returns><see cref="ActionResult"/> representing Search view.</returns>
-        [HandleError]
         [JwtExceptionFilter]
-        public async Task<ActionResult> Search(string token)
+        public async Task<ActionResult> Index(string token)
         {
             this.jwtHelper.ValidateJWT(token, this.tenantId);
 
             this.ViewData["token"] = token;
 
-            var kbList = await this.kbInfoHelper.GetAllKBs(new string[] { nameof(KBInfo.KBName), nameof(KBInfo.KBId), nameof(KBInfo.QuestionField), nameof(KBInfo.AnswerFields) });
+            var kbList = await this.kbInfoHelper.GetAllKBs(
+                new string[]
+                {
+                    nameof(KBInfo.KBName),
+                    nameof(KBInfo.KBId),
+                    nameof(KBInfo.QuestionField),
+                    nameof(KBInfo.AnswerFields),
+                });
 
             return this.View(kbList);
         }
@@ -72,8 +78,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
         /// <param name="searchedKeyword">Keyword searched by the user.</param>
         /// <param name="kbId">kb Id.</param>
         /// <returns>Task that resolves to <see cref="PartialViewResult"/> representing Search Results partial view.</returns>
-        [HandleError]
-        [JwtExceptionFilter]
+        [JwtExceptionFilter(IsPartialView = true)]
         public async Task<PartialViewResult> SearchResults(string searchedKeyword, string kbId)
         {
             this.ValidateAuthorizationHeader();
@@ -116,8 +121,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
         /// <param name="question">question string</param>
         /// <param name="id">id of selected item</param>
         /// <returns><see cref="PartialViewResult"/> representing Result card partial view.</returns>
-        [HandleError]
-        [JwtExceptionFilter]
+        [JwtExceptionFilter(IsPartialView = true)]
         public PartialViewResult ResultCardPartial(string kbId, string answer, string question, string id)
         {
             List<DeserializedAnswer> answers = JsonConvert.DeserializeObject<List<DeserializedAnswer>>(answer);

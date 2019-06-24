@@ -1,4 +1,4 @@
-﻿// <copyright file="RefreshAuthFilter.cs" company="Microsoft">
+﻿// <copyright file="RefreshAuthenticationFilter.cs" company="Microsoft">
 // Copyright (c) Microsoft. All rights reserved.
 // </copyright>
 
@@ -15,7 +15,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Filters
     /// <summary>
     /// Authentication filter for the refresh endpoint
     /// </summary>
-    public class RefreshAuthFilter : Attribute, IAuthenticationFilter
+    public class RefreshAuthenticationFilter : Attribute, IAuthenticationFilter
     {
         /// <summary>
         /// Gets a value indicating whether multiple instances are allowed

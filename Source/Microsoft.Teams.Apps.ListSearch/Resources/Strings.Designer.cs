@@ -61,20 +61,56 @@ namespace Microsoft.Teams.Apps.ListSearch.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to KB Unknown.
+        ///   Looks up a localized string similar to Sorry, something unexpected happened. Please try again..
         /// </summary>
-        internal static string KBIdNotFound {
+        internal static string ErrorGenericMessage {
             get {
-                return ResourceManager.GetString("KBIdNotFound", resourceCulture);
+                return ResourceManager.GetString("ErrorGenericMessage", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to KB Unknown.
+        ///   Looks up a localized string similar to Error.
         /// </summary>
-        internal static string KBNameNotFound {
+        internal static string ErrorGenericTitle {
             get {
-                return ResourceManager.GetString("KBNameNotFound", resourceCulture);
+                return ResourceManager.GetString("ErrorGenericTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Your search session has expired. Please relaunch the app and try your search again..
+        /// </summary>
+        internal static string ErrorSessionExpiredMessage {
+            get {
+                return ResourceManager.GetString("ErrorSessionExpiredMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Session expired.
+        /// </summary>
+        internal static string ErrorSessionExpiredTitle {
+            get {
+                return ResourceManager.GetString("ErrorSessionExpiredTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to You do not have access to view this page..
+        /// </summary>
+        internal static string ErrorUnauthorizedMessage {
+            get {
+                return ResourceManager.GetString("ErrorUnauthorizedMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unauthorized.
+        /// </summary>
+        internal static string ErrorUnauthorizedTitle {
+            get {
+                return ResourceManager.GetString("ErrorUnauthorizedTitle", resourceCulture);
             }
         }
         

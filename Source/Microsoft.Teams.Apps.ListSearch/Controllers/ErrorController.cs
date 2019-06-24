@@ -5,6 +5,7 @@
 namespace Microsoft.Teams.Apps.ListSearch.Controllers
 {
     using System.Web.Mvc;
+    using Microsoft.Teams.Apps.ListSearch.Resources;
 
     /// <summary>
     /// Error Controller
@@ -14,28 +15,30 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
         /// <summary>
         /// Error view
         /// </summary>
+        /// <param name="code">The error to show</param>
+        /// <param name="isPartialView">True if this should be partial view</param>
         /// <returns>Task that resolves to <see cref="ActionResult"/> representing Error view.</returns>
-        public ActionResult Error()
+        public ActionResult Index(string code = null, bool isPartialView = false)
         {
-            return this.View();
-        }
+            switch (code)
+            {
+                case "Unauthorized":
+                    this.ViewBag.Title = Strings.ErrorUnauthorizedTitle;
+                    this.ViewBag.Message = Strings.ErrorUnauthorizedMessage;
+                    break;
 
-        /// <summary>
-        /// Error view for expired tokens.
-        /// </summary>
-        /// <returns><see cref="ActionResult"/> for Token expired error view.</returns>
-        public ActionResult TokenExpiredError()
-        {
-            return this.View();
-        }
+                case "SessionExpired":
+                    this.ViewBag.Title = Strings.ErrorSessionExpiredTitle;
+                    this.ViewBag.Message = Strings.ErrorSessionExpiredMessage;
+                    break;
 
-        /// <summary>
-        /// Error view for unauthorizedAccess
-        /// </summary>
-        /// <returns><see cref="ActionResult"/> for Unauthorized access error view.</returns>
-        public ActionResult UnauthorizedAccess()
-        {
-            return this.View();
+                default:
+                    this.ViewBag.Title = Strings.ErrorGenericTitle;
+                    this.ViewBag.Message = Strings.ErrorGenericMessage;
+                    break;
+            }
+
+            return isPartialView ? (ActionResult)this.PartialView("ErrorPartial") : this.View();
         }
     }
 }

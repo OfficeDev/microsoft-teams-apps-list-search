@@ -41,7 +41,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
         /// </summary>
         /// <returns><see cref="Task"/> to refresh KBs.</returns>
         [HttpPost]
-        [RefreshAuthFilter]
+        [RefreshAuthenticationFilter]
         public async Task RefreshAllKBs()
         {
             this.logProvider.LogInfo("Refreshing all knowledge bases");
@@ -55,6 +55,8 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
                     nameof(KBInfo.QuestionField),
                     nameof(KBInfo.AnswerFields),
                     nameof(KBInfo.SharePointSiteId),
+                    nameof(KBInfo.LastRefreshAttemptDateTime),
+                    nameof(KBInfo.LastRefreshAttemptError),
                 });
             this.logProvider.LogInfo($"Found {kbList.Count} configured KBs");
 

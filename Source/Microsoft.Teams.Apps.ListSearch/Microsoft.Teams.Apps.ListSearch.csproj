@@ -227,9 +227,8 @@
     <Compile Include="Controllers\MessagesController.cs" />
     <Compile Include="Controllers\RefreshController.cs" />
     <Compile Include="Controllers\SearchController.cs" />
-    <Compile Include="ErrorHandler\AiHandleErrorAttribute.cs" />
     <Compile Include="Filters\JwtExceptionFilter.cs" />
-    <Compile Include="Filters\RefreshAuthFilter.cs" />
+    <Compile Include="Filters\RefreshAuthenticationFilter.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
@@ -290,10 +289,8 @@
     </Content>
     <Content Include="Views\Web.config" />
     <Content Include="Views\Search\SearchResults.cshtml" />
-    <Content Include="Views\Error\Error.cshtml" />
-    <Content Include="Views\Error\TokenExpiredError.cshtml" />
-    <Content Include="Views\Error\UnauthorizedAccess.cshtml" />
-    <Content Include="Views\Search\Search.cshtml" />
+    <Content Include="Views\Error\Index.cshtml" />
+    <Content Include="Views\Search\Index.cshtml" />
     <Content Include="Views\Error\ErrorPartial.cshtml" />
     <Content Include="Views\Search\ResultCardPartial.cshtml" />
   </ItemGroup>

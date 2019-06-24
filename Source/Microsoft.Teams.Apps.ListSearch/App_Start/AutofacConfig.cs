@@ -62,6 +62,11 @@ namespace Microsoft.Teams.Apps.ListSearch
                 ConfigurationManager.AppSettings["TokenEncryptionKey"]))
                 .SingleInstance();
 
+            builder.Register(c => new GraphHelper(
+                c.Resolve<HttpClient>(),
+                c.Resolve<TokenHelper>()))
+                .SingleInstance();
+
             builder.Register(c => new BlobHelper(connectionString))
                 .SingleInstance();
 

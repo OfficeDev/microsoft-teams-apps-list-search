@@ -84,7 +84,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
 
                 TaskInfo taskInfo = new TaskInfo()
                 {
-                    Url = $"https://{this.appBaseDomain}/search/search?token={jwt}&theme={{theme}}",
+                    Url = $"https://{this.appBaseDomain}/search?token={jwt}&theme={{theme}}",
                     Title = Strings.MessagingExtensionTitle,
                     Width = WidthInPixels,
                     Height = HeightInPixels,
