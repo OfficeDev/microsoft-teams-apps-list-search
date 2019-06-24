@@ -61,7 +61,9 @@ namespace Microsoft.Teams.Apps.ListSearch.Configuration
 
             builder.Register(c => new QnAMakerService(
                 c.Resolve<HttpClient>(),
-                ConfigurationManager.AppSettings["QnAMakerSubscriptionKey"]))
+                ConfigurationManager.AppSettings["QnaMakerApiEndpointUrl"],
+                ConfigurationManager.AppSettings["QnAMakerSubscriptionKey"],
+                hostUrl: null)) // Host URL is not needed in config app
                 .SingleInstance();
 
             builder.Register(c => new BlobHelper(

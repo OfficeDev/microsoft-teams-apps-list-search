@@ -245,6 +245,10 @@
               "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')),'2015-05-01-preview').key1)]"
             },
             {
+              "name": "QnAMakerApiEndpointUrl",
+              "value": "[reference(resourceId('Microsoft.CognitiveServices/accounts/', variables('qnaMakerAccountName')), '2017-04-18').endpoint]"
+            },
+            {
               "name": "QnAMakerHostUrl",
               "value": "[concat('https://', reference(resourceId('Microsoft.Web/sites', variables('qnaMakerAppServiceName'))).hostNames[0])]"
             },
@@ -454,6 +458,10 @@
             {
               "name": "TokenEncryptionKey",
               "value": "[parameters('tokenEncryptionKey')]"
+            },
+            {
+              "name": "QnAMakerApiEndpointUrl",
+              "value": "[reference(resourceId('Microsoft.CognitiveServices/accounts/', variables('qnaMakerAccountName')), '2017-04-18').endpoint]"
             },
             {
               "name": "QnAMakerSubscriptionKey",

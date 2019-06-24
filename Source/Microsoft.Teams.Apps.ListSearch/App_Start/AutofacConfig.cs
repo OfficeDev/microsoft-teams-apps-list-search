@@ -67,6 +67,7 @@ namespace Microsoft.Teams.Apps.ListSearch
 
             builder.Register(c => new QnAMakerService(
                 c.Resolve<HttpClient>(),
+                ConfigurationManager.AppSettings["QnaMakerApiEndpointUrl"],
                 ConfigurationManager.AppSettings["QnAMakerSubscriptionKey"],
                 ConfigurationManager.AppSettings["QnAMakerHostUrl"]))
                 .SingleInstance();

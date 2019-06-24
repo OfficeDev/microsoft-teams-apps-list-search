@@ -15,18 +15,18 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
     /// </summary>
     public class QnAMakerService : IQnAMakerService
     {
-        /// <summary>
-        /// QnA Maker Request url
-        /// </summary>
-        private const string QnAMakerRequestUrl = "https://westus.api.cognitive.microsoft.com/qnamaker/v4.0";
-
         private const string MethodKB = "knowledgebases";
         private const string MethodOperation = "operations";
 
         /// <summary>
-        /// Host url of the compute application
+        /// Http client for generating http requests.
         /// </summary>
-        private readonly string hostUrl;
+        private readonly HttpClient httpClient;
+
+        /// <summary>
+        /// QnA Maker API endpoint URL
+        /// </summary>
+        private readonly string qnaMakerApiEndpointUrl;
 
         /// <summary>
         /// Ocp-Apim-Subscription-Key for the QnA Maker service
@@ -34,9 +34,9 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
         private readonly string subscriptionKey;
 
         /// <summary>
-        /// Http client for generating http requests.
+        /// QnA Maker host endpoint URL
         /// </summary>
-        private readonly HttpClient httpClient;
+        private readonly string qnaMakerHostEndpointUrl;
 
         /// <summary>
         /// Endpoint key for the published Kb to be searched.
@@ -47,26 +47,28 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
         /// Initializes a new instance of the <see cref="QnAMakerService"/> class.
         /// </summary>
         /// <param name="httpClient">HttpClient for generating http requests</param>
+        /// <param name="apiEndpointUrl">Endpoint URL for QnAMaker API</param>
         /// <param name="subscriptionKey">QnA Maker subscription key</param>
         /// <param name="hostUrl">QnA Maker service host URL</param>
-        public QnAMakerService(HttpClient httpClient, string subscriptionKey, string hostUrl = null)
+        public QnAMakerService(HttpClient httpClient, string apiEndpointUrl, string subscriptionKey, string hostUrl)
         {
             this.httpClient = httpClient;
+            this.qnaMakerApiEndpointUrl = apiEndpointUrl;
             this.subscriptionKey = subscriptionKey;
-            this.hostUrl = hostUrl;
+            this.qnaMakerHostEndpointUrl = hostUrl;
         }
 
         /// <inheritdoc/>
         public async Task<GenerateAnswerResponse> GenerateAnswerAsync(string kbId, GenerateAnswerRequest request)
         {
-            if (string.IsNullOrEmpty(this.hostUrl))
+            if (string.IsNullOrEmpty(this.qnaMakerHostEndpointUrl))
             {
                 throw new InvalidOperationException($"{nameof(this.GenerateAnswerAsync)} was called on an instance of {nameof(QnAMakerService)} with no host url provided");
             }
 
             await this.EnsureQnAMakerEndpointKeyAsync();
 
-            string uri = $"{this.hostUrl}/qnamaker/{MethodKB}/{kbId}/generateAnswer";
+            string uri = $"{this.qnaMakerHostEndpointUrl}/qnamaker/{MethodKB}/{kbId}/generateAnswer";
             using (var httpRequest = new HttpRequestMessage(HttpMethod.Post, uri))
             {
                 httpRequest.Content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
@@ -82,7 +84,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
         /// <inheritdoc/>
         public async Task<QnAMakerResponse> UpdateKB(string kbId, UpdateKBRequest body)
         {
-            string uri = $"{QnAMakerRequestUrl}/{MethodKB}/{kbId}";
+            string uri = $"{this.qnaMakerApiEndpointUrl}/{MethodKB}/{kbId}";
             using (var httpRequest = new HttpRequestMessage(new HttpMethod("PATCH"), uri))
             {
                 httpRequest.Content = new StringContent(JsonConvert.SerializeObject(body), Encoding.UTF8, "application/json");
@@ -98,7 +100,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
         /// <inheritdoc/>
         public async Task<bool> PublishKB(string kbId)
         {
-            var uri = $"{QnAMakerRequestUrl}/{MethodKB}/{kbId}";
+            var uri = $"{this.qnaMakerApiEndpointUrl}/{MethodKB}/{kbId}";
             using (var httpRequest = new HttpRequestMessage(HttpMethod.Post, uri))
             {
                 httpRequest.Headers.Add(Constants.OcpApimSubscriptionKey, this.subscriptionKey);
@@ -113,7 +115,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
         /// <inheritdoc/>
         public async Task<QnAMakerResponse> CreateKB(CreateKBRequest body)
         {
-            var uri = $"{QnAMakerRequestUrl}/{MethodKB}/create";
+            var uri = $"{this.qnaMakerApiEndpointUrl}/{MethodKB}/create";
             using (var httpRequest = new HttpRequestMessage(HttpMethod.Post, uri))
             {
                 httpRequest.Content = new StringContent(JsonConvert.SerializeObject(body), Encoding.UTF8, "application/json");
@@ -129,7 +131,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
         /// <inheritdoc/>
         public async Task<bool> DeleteKB(string kbId)
         {
-            var uri = $"{QnAMakerRequestUrl}/{MethodKB}/{kbId}";
+            var uri = $"{this.qnaMakerApiEndpointUrl}/{MethodKB}/{kbId}";
             using (var httpRequest = new HttpRequestMessage(HttpMethod.Delete, uri))
             {
                 httpRequest.Headers.Add(Constants.OcpApimSubscriptionKey, this.subscriptionKey);
@@ -144,7 +146,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
         /// <inheritdoc/>
         public async Task<QnAMakerResponse> GetOperationDetails(string operationId)
         {
-            var uri = $"{QnAMakerRequestUrl}/{MethodOperation}/{operationId}";
+            var uri = $"{this.qnaMakerApiEndpointUrl}/{MethodOperation}/{operationId}";
             using (var httpRequest = new HttpRequestMessage(HttpMethod.Get, uri))
             {
                 httpRequest.Headers.Add(Constants.OcpApimSubscriptionKey, this.subscriptionKey);
@@ -159,7 +161,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
         /// <inheritdoc/>
         public async Task<GetKnowledgeBaseDetailsResponse> GetKnowledgeBaseDetails(string kbId)
         {
-            var uri = $"{QnAMakerRequestUrl}/{MethodKB}/{kbId}";
+            var uri = $"{this.qnaMakerApiEndpointUrl}/{MethodKB}/{kbId}";
             using (var httpRequest = new HttpRequestMessage(HttpMethod.Get, uri))
             {
                 httpRequest.Headers.Add(Constants.OcpApimSubscriptionKey, this.subscriptionKey);
@@ -241,7 +243,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
         {
             if (string.IsNullOrEmpty(this.endpointKey))
             {
-                string endpointKeyUrl = $"{QnAMakerRequestUrl}/endpointkeys";
+                string endpointKeyUrl = $"{this.qnaMakerApiEndpointUrl}/endpointkeys";
 
                 using (var httpRequest = new HttpRequestMessage(HttpMethod.Get, endpointKeyUrl))
                 {
