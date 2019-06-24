@@ -18,8 +18,6 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
     /// </summary>
     public class KnowledgeBaseRefreshHelper
     {
-        private const string JsonFileExtension = ".json";
-
         private readonly BlobHelper blobHelper;
         private readonly KBInfoHelper kbInfoHelper;
         private readonly GraphHelper graphHelper;
@@ -54,54 +52,78 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
             this.logProvider.LogDebug($"Last successful refresh was on {kb.LastRefreshDateTime}");
             this.logProvider.LogDebug($"Last refresh attempt was on {kb.LastRefreshAttemptDateTime}, with status {kb.LastRefreshAttemptError ?? "success"}");
 
+            Dictionary<string, Uri> blobInfoTemp = new Dictionary<string, Uri>();
+
             kb.LastRefreshAttemptDateTime = DateTime.UtcNow;
 
             try
             {
+                // Update the KB with the current list contents
                 ColumnInfo questionColumn = JsonConvert.DeserializeObject<ColumnInfo>(kb.QuestionField);
-                Dictionary<string, Uri> blobInfoTemp = new Dictionary<string, Uri>();
-                GetListContentsResponse listContents = null;
-
-                do
-                {
-                    listContents = await this.GetSharePointListContentsAsync(kb.SharePointListId, kb.AnswerFields, questionColumn.Name, kb.SharePointSiteId, listContents?.ODataNextLink ?? null);
-
-                    string blobName = Guid.NewGuid().ToString() + JsonFileExtension;
-                    string blobUrl = await this.blobHelper.UploadBlobAsync(JsonConvert.SerializeObject(listContents), blobName);
-                    blobInfoTemp.Add(blobName, new Uri(blobUrl));
-
-                    this.logProvider.LogDebug($"Fetched page of list contents, stored as {blobName}");
-                }
-                while (!string.IsNullOrEmpty(listContents.ODataNextLink));
-
+                await this.PopulateTemporaryBlobsWithListContentsAsync(kb, questionColumn, blobInfoTemp);
                 await this.UpdateKnowledgeBaseAsync(kb.KBId, blobInfoTemp, JsonConvert.DeserializeObject<ColumnInfo>(kb.QuestionField).Name, this.blobHelper);
 
-                // Delete all existing blobs for this KB
-                foreach (string blobName in blobInfoTemp.Keys)
-                {
-                    await this.blobHelper.DeleteBlobAsync(blobName);
-                    this.logProvider.LogDebug($"Deleted temporary blob {blobName}");
-                }
+                this.logProvider.LogDebug($"Refresh of KB succeeded");
 
-                this.logProvider.LogDebug($"Refresh of KB {kb.KBId} succeeded");
-
+                // Record the successful update
                 kb.LastRefreshDateTime = DateTime.UtcNow;
                 kb.LastRefreshAttemptError = null;
                 await this.kbInfoHelper.InsertOrMergeKBInfo(kb);
             }
             catch (Exception ex)
             {
-                this.logProvider.LogError($"Refresh of KB {kb.KBId} failed: {ex.Message}", ex);
+                this.logProvider.LogError($"Refresh of KB failed: {ex.Message}", ex);
 
+                // Log refresh attempt
                 kb.LastRefreshAttemptError = ex.ToString();
                 await this.kbInfoHelper.InsertOrMergeKBInfo(kb);
+            }
+            finally
+            {
+                try
+                {
+                    // Delete the temporary blobs that were created
+                    await this.DeleteTemporaryBlobsAsync(blobInfoTemp);
+                }
+                catch (Exception ex)
+                {
+                    this.logProvider.LogError($"Failed to delete temporary blobs: {ex.Message}", ex);
+                }
             }
 
             this.logProvider.LogInfo($"Finished refreshing KB {kb.KBId}, with status {kb.LastRefreshAttemptError ?? "success"}");
         }
 
+        // Populate temporary blob files with the SharePoint list contents
+        private async Task PopulateTemporaryBlobsWithListContentsAsync(KBInfo kb, ColumnInfo questionColumn, Dictionary<string, Uri> blobInfoTemp)
+        {
+            GetListContentsResponse listContents = null;
+
+            do
+            {
+                listContents = await this.GetListContentsPageAsync(kb.SharePointListId, kb.AnswerFields, questionColumn.Name, kb.SharePointSiteId, listContents?.ODataNextLink ?? null);
+
+                string blobName = $"{Guid.NewGuid()}.json";
+                string blobUrl = await this.blobHelper.UploadBlobAsync(JsonConvert.SerializeObject(listContents), blobName);
+                blobInfoTemp.Add(blobName, new Uri(blobUrl));
+
+                this.logProvider.LogDebug($"Fetched page of list contents, stored as {blobName}");
+            }
+            while (!string.IsNullOrEmpty(listContents.ODataNextLink));
+        }
+
+        // Delete the temporary blobs that were created
+        private async Task DeleteTemporaryBlobsAsync(Dictionary<string, Uri> blobInfoTemp)
+        {
+            foreach (string blobName in blobInfoTemp.Keys)
+            {
+                await this.blobHelper.DeleteBlobAsync(blobName);
+                this.logProvider.LogDebug($"Deleted temporary blob {blobName}");
+            }
+        }
+
         /// <summary>
-        /// Refreshes KB - Updates and Publishes KB.
+        /// Update and publish the knowledge base.
         /// </summary>
         /// <param name="kbId">Id of KB to be refreshed</param>
         /// <param name="blobInfo">Details of source blob files</param>
@@ -235,15 +257,15 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
         }
 
         /// <summary>
-        /// Get the contents of the SharePoint list.
+        /// Get a single page of contents in the SharePoint list.
         /// </summary>
         /// <param name="listId">Id of the list to be fetched.</param>
         /// <param name="answerFields">Answer fields to be used for KB.</param>
         /// <param name="questionField">Question field.</param>
         /// <param name="sharePointSiteId">Site id of SharePoint site.</param>
-        /// <param name="odataNextUrl">Odata next url</param>
+        /// <param name="odataNextUrl">Link to the next set of items</param>
         /// <returns><see cref="Task"/> That resolves to <see cref="GetListContentsResponse"/> which represents the list response.</returns>
-        private async Task<GetListContentsResponse> GetSharePointListContentsAsync(string listId, string answerFields, string questionField, string sharePointSiteId, string odataNextUrl)
+        private async Task<GetListContentsResponse> GetListContentsPageAsync(string listId, string answerFields, string questionField, string sharePointSiteId, string odataNextUrl)
         {
             var fieldsToFetch = JsonConvert.DeserializeObject<List<ColumnInfo>>(answerFields)
                 .Select(field => field.Name)
