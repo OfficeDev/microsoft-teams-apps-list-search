@@ -42,7 +42,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
         /// <returns><see cref="Task"/> to refresh KBs.</returns>
         [HttpPost]
         [RefreshAuthenticationFilter]
-        public async Task RefreshAllKBs()
+        public async Task<IHttpActionResult> RefreshAllKBs()
         {
             this.logProvider.LogInfo("Refreshing all knowledge bases");
 
@@ -58,8 +58,9 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
                     nameof(KBInfo.LastRefreshAttemptDateTime),
                     nameof(KBInfo.LastRefreshAttemptError),
                 });
-            this.logProvider.LogInfo($"Found {kbList.Count} configured KBs");
+            this.logProvider.LogInfo($"Found {kbList.Count} knowledge bases");
 
+            int refreshTasksCount = 0;
             foreach (var kb in kbList)
             {
                 DateTime lastRefreshed = kb.LastRefreshDateTime;
@@ -71,34 +72,46 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
 
                 if (lastRefreshed.AddHours(frequencyInHours) < DateTime.UtcNow)
                 {
-                    try
-                    {
-                        await this.refreshHelper.RefreshKnowledgeBaseAsync(kb);
-
-                        var properties = new Dictionary<string, string>
-                        {
-                            { "KnowledgeBaseId", kb.KBId },
-                        };
-                        this.logProvider.LogEvent("KnowledgeBaseRefreshSuccess", properties);
-                    }
-                    catch (Exception ex)
-                    {
-                        var properties = new Dictionary<string, string>
-                        {
-                            { "KnowledgeBaseId", kb.KBId },
-                            { "LastRefreshDateTime", lastRefreshed.ToString("u") },
-                            { "ErrorMessage", ex.Message },
-                        };
-                        this.logProvider.LogEvent("KnowledgeBaseRefreshFailure", properties);
-
-                        this.logProvider.LogWarning($"Failed to refresh KB {kb.KBId}: {ex.Message}", exception: ex);
-                        continue;
-                    }
+                    Guid correlationId = Guid.NewGuid();
+                    this.logProvider.LogInfo($"Queueing refresh task for knowledge base {kb.KBId} (correlation id {correlationId})", correlationId: correlationId);
+                    System.Web.Hosting.HostingEnvironment.QueueBackgroundWorkItem(ct => this.RefreshKnowledgeBaseAsync(kb, correlationId, ct));
+                    refreshTasksCount++;
                 }
                 else
                 {
                     this.logProvider.LogInfo($"Skipping refresh for {kb.KBId}, refreshed less than {kb.RefreshFrequencyInHours} hours ago");
                 }
+            }
+
+            return this.StatusCode(refreshTasksCount > 0 ? System.Net.HttpStatusCode.Accepted : System.Net.HttpStatusCode.OK);
+        }
+
+        private async Task RefreshKnowledgeBaseAsync(KBInfo kb, Guid correlationId, System.Threading.CancellationToken cancelToken)
+        {
+            try
+            {
+                await this.refreshHelper.RefreshKnowledgeBaseAsync(kb, correlationId);
+
+                this.logProvider.LogEvent(
+                    "KnowledgeBaseRefreshSuccess",
+                    properties: new Dictionary<string, string>
+                    {
+                        { "KnowledgeBaseId", kb.KBId },
+                    },
+                    correlationId: correlationId);
+            }
+            catch (Exception ex)
+            {
+                this.logProvider.LogEvent(
+                    "KnowledgeBaseRefreshFailure",
+                    properties: new Dictionary<string, string>
+                    {
+                        { "KnowledgeBaseId", kb.KBId },
+                        { "LastRefreshDateTime", kb.LastRefreshDateTime.ToString("u") },
+                        { "ErrorMessage", ex.Message },
+                    },
+                    correlationId: correlationId);
+                this.logProvider.LogWarning($"Failed to refresh KB {kb.KBId}: {ex.Message}", exception: ex, correlationId: correlationId);
             }
         }
     }

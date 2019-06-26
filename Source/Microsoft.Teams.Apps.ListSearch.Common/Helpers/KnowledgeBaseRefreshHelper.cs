@@ -45,12 +45,15 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
         /// Refresh the data in the given knowledge base.
         /// </summary>
         /// <param name="kb">Knowledge base info</param>
+        /// <param name="correlationId">Correlation id to use for logging</param>
         /// <returns>Tracking task</returns>
-        public async Task RefreshKnowledgeBaseAsync(KBInfo kb)
+        public async Task RefreshKnowledgeBaseAsync(KBInfo kb, Guid? correlationId = null)
         {
-            this.logProvider.LogInfo($"Starting refresh of knowledge base {kb.KBId}");
-            this.logProvider.LogDebug($"Last successful refresh was on {kb.LastRefreshDateTime}");
-            this.logProvider.LogDebug($"Last refresh attempt was on {kb.LastRefreshAttemptDateTime}, with status {kb.LastRefreshAttemptError ?? "success"}");
+            correlationId = correlationId ?? Guid.NewGuid();
+
+            this.logProvider.LogInfo($"Starting refresh of knowledge base {kb.KBId}", correlationId: correlationId);
+            this.logProvider.LogDebug($"Last successful refresh was on {kb.LastRefreshDateTime}", correlationId: correlationId);
+            this.logProvider.LogDebug($"Last refresh attempt was on {kb.LastRefreshAttemptDateTime}, with status {kb.LastRefreshAttemptError ?? "success"}", correlationId: correlationId);
 
             Dictionary<string, Uri> blobInfoTemp = new Dictionary<string, Uri>();
 
@@ -60,19 +63,19 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
             {
                 // Update the KB with the current list contents
                 ColumnInfo questionColumn = JsonConvert.DeserializeObject<ColumnInfo>(kb.QuestionField);
-                await this.PopulateTemporaryBlobsWithListContentsAsync(kb, questionColumn, blobInfoTemp);
-                await this.UpdateKnowledgeBaseAsync(kb.KBId, blobInfoTemp, JsonConvert.DeserializeObject<ColumnInfo>(kb.QuestionField).Name, this.blobHelper);
+                await this.PopulateTemporaryBlobsWithListContentsAsync(kb, questionColumn, blobInfoTemp, correlationId.Value);
+                await this.UpdateKnowledgeBaseAsync(kb.KBId, blobInfoTemp, JsonConvert.DeserializeObject<ColumnInfo>(kb.QuestionField).Name, correlationId.Value);
 
-                this.logProvider.LogDebug($"Refresh of KB succeeded");
+                this.logProvider.LogDebug($"Refresh of KB succeeded", correlationId: correlationId);
 
                 // Record the successful update
                 kb.LastRefreshDateTime = DateTime.UtcNow;
-                kb.LastRefreshAttemptError = null;
+                kb.LastRefreshAttemptError = string.Empty;
                 await this.kbInfoHelper.InsertOrMergeKBInfo(kb);
             }
             catch (Exception ex)
             {
-                this.logProvider.LogError($"Refresh of KB failed: {ex.Message}", ex);
+                this.logProvider.LogError($"Refresh of KB failed: {ex.Message}", ex, correlationId: correlationId);
 
                 // Log refresh attempt
                 kb.LastRefreshAttemptError = ex.ToString();
@@ -83,19 +86,19 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
                 try
                 {
                     // Delete the temporary blobs that were created
-                    await this.DeleteTemporaryBlobsAsync(blobInfoTemp);
+                    await this.DeleteTemporaryBlobsAsync(blobInfoTemp, correlationId.Value);
                 }
                 catch (Exception ex)
                 {
-                    this.logProvider.LogError($"Failed to delete temporary blobs: {ex.Message}", ex);
+                    this.logProvider.LogError($"Failed to delete temporary blobs: {ex.Message}", ex, correlationId: correlationId);
                 }
             }
 
-            this.logProvider.LogInfo($"Finished refreshing KB {kb.KBId}, with status {kb.LastRefreshAttemptError ?? "success"}");
+            this.logProvider.LogInfo($"Finished refreshing KB {kb.KBId}, with status {kb.LastRefreshAttemptError ?? "success"}", correlationId: correlationId);
         }
 
         // Populate temporary blob files with the SharePoint list contents
-        private async Task PopulateTemporaryBlobsWithListContentsAsync(KBInfo kb, ColumnInfo questionColumn, Dictionary<string, Uri> blobInfoTemp)
+        private async Task PopulateTemporaryBlobsWithListContentsAsync(KBInfo kb, ColumnInfo questionColumn, Dictionary<string, Uri> blobInfoTemp, Guid correlationId)
         {
             GetListContentsResponse listContents = null;
 
@@ -107,40 +110,33 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
                 string blobUrl = await this.blobHelper.UploadBlobAsync(JsonConvert.SerializeObject(listContents), blobName);
                 blobInfoTemp.Add(blobName, new Uri(blobUrl));
 
-                this.logProvider.LogDebug($"Fetched page of list contents, stored as {blobName}");
+                this.logProvider.LogDebug($"Fetched page of list contents, stored as {blobName}", correlationId: correlationId);
             }
             while (!string.IsNullOrEmpty(listContents.ODataNextLink));
         }
 
         // Delete the temporary blobs that were created
-        private async Task DeleteTemporaryBlobsAsync(Dictionary<string, Uri> blobInfoTemp)
+        private async Task DeleteTemporaryBlobsAsync(Dictionary<string, Uri> blobInfoTemp, Guid correlationId)
         {
             foreach (string blobName in blobInfoTemp.Keys)
             {
                 await this.blobHelper.DeleteBlobAsync(blobName);
-                this.logProvider.LogDebug($"Deleted temporary blob {blobName}");
+                this.logProvider.LogDebug($"Deleted temporary blob {blobName}", correlationId: correlationId);
             }
         }
 
-        /// <summary>
-        /// Update and publish the knowledge base.
-        /// </summary>
-        /// <param name="kbId">Id of KB to be refreshed</param>
-        /// <param name="blobInfo">Details of source blob files</param>
-        /// <param name="questionField">Question field</param>
-        /// <param name="blobHelper">Blob helper object</param>
-        /// <returns>Task that represents refresh operation.</returns>
-        private async Task UpdateKnowledgeBaseAsync(string kbId, Dictionary<string, Uri> blobInfo, string questionField, BlobHelper blobHelper)
+        // Update and publish the knowledge base
+        private async Task UpdateKnowledgeBaseAsync(string kbId, Dictionary<string, Uri> blobInfo, string questionField, Guid correlationId)
         {
-            this.logProvider.LogDebug($"Deleting existing KB sources");
-            bool deleteSourcesResult = await this.DeleteExistingKnowledgeBaseSourcesAsync(kbId);
+            this.logProvider.LogDebug($"Deleting existing KB sources", correlationId: correlationId);
+            bool deleteSourcesResult = await this.DeleteExistingKnowledgeBaseSourcesAsync(kbId, correlationId);
 
-            this.logProvider.LogDebug($"Adding new KB sources ({blobInfo.Count} files)");
+            this.logProvider.LogDebug($"Adding new KB sources ({blobInfo.Count} files)", correlationId: correlationId);
             bool addSourcesResult = true;
             if (blobInfo.Count < 10)
             {
                 // Fewer than 10 files
-                addSourcesResult = await this.AddNewKnowledgeBaseSourcesAsync(kbId, blobInfo, questionField);
+                addSourcesResult = await this.AddNewKnowledgeBaseSourcesAsync(kbId, blobInfo, questionField, correlationId);
             }
             else
             {
@@ -161,8 +157,8 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
                     }
 
                     // no more file left to include in batch
-                    this.logProvider.LogDebug($"Adding next batch of sources");
-                    addSourcesResult = addSourcesResult && await this.AddNewKnowledgeBaseSourcesAsync(kbId, blobInfoBatch, questionField);
+                    this.logProvider.LogDebug($"Adding next batch of sources", correlationId: correlationId);
+                    addSourcesResult = addSourcesResult && await this.AddNewKnowledgeBaseSourcesAsync(kbId, blobInfoBatch, questionField, correlationId);
                     blobInfoBatch.Clear();
 
                     if (filesExtracted < blobInfo.Count)
@@ -175,27 +171,23 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
 
                 if (blobInfoBatch.Count > 0)
                 {
-                    this.logProvider.LogDebug($"Adding final batch of sources");
-                    addSourcesResult = addSourcesResult && await this.AddNewKnowledgeBaseSourcesAsync(kbId, blobInfoBatch, questionField);
+                    this.logProvider.LogDebug($"Adding final batch of sources", correlationId: correlationId);
+                    addSourcesResult = addSourcesResult && await this.AddNewKnowledgeBaseSourcesAsync(kbId, blobInfoBatch, questionField, correlationId);
                 }
             }
 
             // if delete or any of the updates fails, KB is not published. Retry on next refresh.
             if (addSourcesResult && deleteSourcesResult)
             {
-                this.logProvider.LogDebug($"Publishing updated knowledge base");
+                this.logProvider.LogDebug($"Publishing updated knowledge base", correlationId: correlationId);
                 await this.qnaMakerService.PublishKB(kbId);
             }
 
-            this.logProvider.LogInfo($"Updated knowledge base {kbId}");
+            this.logProvider.LogInfo($"Updated knowledge base {kbId}", correlationId: correlationId);
         }
 
-        /// <summary>
-        /// Deletes sources from KB
-        /// </summary>
-        /// <param name="kbId">Knowledge base ID</param>
-        /// <returns><see cref="Task"/> That resolves to a <see cref="bool"/> which represents success or failure of operation.</returns>
-        private async Task<bool> DeleteExistingKnowledgeBaseSourcesAsync(string kbId)
+        // Delete existing sources from the knowledge base
+        private async Task<bool> DeleteExistingKnowledgeBaseSourcesAsync(string kbId, Guid correlationId)
         {
             GetKnowledgeBaseDetailsResponse kbDetails = await this.qnaMakerService.GetKnowledgeBaseDetails(kbId);
             UpdateKBRequest deleteSourcesRequest = new UpdateKBRequest()
@@ -208,19 +200,13 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
             QnAMakerResponse deleteSourcesResult = await this.qnaMakerService.UpdateKB(kbId, deleteSourcesRequest);
             string deleteSourcesResultState = await this.qnaMakerService.AwaitOperationCompletionState(deleteSourcesResult);
 
-            this.logProvider.LogDebug($"Delete operation completed with status {deleteSourcesResultState} ({kbDetails.Sources?.Count} sources)");
+            this.logProvider.LogDebug($"Delete operation completed with status {deleteSourcesResultState} ({kbDetails.Sources?.Count} sources)", correlationId: correlationId);
 
             return this.qnaMakerService.IsOperationSuccessful(deleteSourcesResultState);
         }
 
-        /// <summary>
-        /// Adds new sources to the kb.
-        /// </summary>
-        /// <param name="kbId">Kb id</param>
-        /// <param name="blobInfo"><see cref="Dictionary{TKey, TValue}"/> with keys as blob names and values as Uris of the corresponding blobs.</param>
-        /// <param name="questionField">Question field</param>
-        /// <returns><see cref="Task"/> That resolves to a <see cref="bool"/> which represents success or failure of operation.</returns>
-        private async Task<bool> AddNewKnowledgeBaseSourcesAsync(string kbId, Dictionary<string, Uri> blobInfo, string questionField)
+        // Add the specified sources to the knowledge base
+        private async Task<bool> AddNewKnowledgeBaseSourcesAsync(string kbId, Dictionary<string, Uri> blobInfo, string questionField, Guid correlationId)
         {
             List<File> files = new List<File>();
             foreach (var blobData in blobInfo)
@@ -251,7 +237,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
             var addSourcesResult = await this.qnaMakerService.UpdateKB(kbId, addSourcesRequest);
             string addSourcesResultState = await this.qnaMakerService.AwaitOperationCompletionState(addSourcesResult);
 
-            this.logProvider.LogDebug($"Add operation completed with status {addSourcesResultState} ({files.Count} sources)");
+            this.logProvider.LogDebug($"Add operation completed with status {addSourcesResultState} ({files.Count} sources)", correlationId: correlationId);
 
             return this.qnaMakerService.IsOperationSuccessful(addSourcesResultState);
         }

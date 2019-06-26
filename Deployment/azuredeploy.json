@@ -67,8 +67,6 @@
     "sku": {
       "type": "string",
       "allowedValues": [
-        "Free",
-        "Shared",
         "Basic",
         "Standard",
         "Premium"
@@ -218,7 +216,7 @@
         "dailyMemoryTimeQuota": 0,
         "httpsOnly": true,
         "siteConfig": {
-          "alwaysOn": false,
+          "alwaysOn": true,
           "appSettings": [
             {
               "name": "PROJECT",
