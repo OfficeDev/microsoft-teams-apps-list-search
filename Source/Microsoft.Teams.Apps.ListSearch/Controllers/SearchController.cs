@@ -8,6 +8,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
     using System.Collections.Generic;
     using System.Collections.Specialized;
     using System.Configuration;
+    using System.Linq;
     using System.Threading.Tasks;
     using System.Web.Mvc;
     using System.Xml;
@@ -86,12 +87,13 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
             this.Session["SharePointUrl"] = kbInfo.SharePointUrl;
 
             var generateAnswerRequest = new GenerateAnswerRequest(searchedKeyword, this.topResultsToBeFetched, this.minimumConfidenceScore);
-            var result = await this.qnaMakerService.GenerateAnswerAsync(kbId, generateAnswerRequest);
+            var generateAnswerResponse = await this.qnaMakerService.GenerateAnswerAsync(kbId, generateAnswerRequest);
 
             List<SelectedSearchResult> selectedSearchResults = new List<SelectedSearchResult>();
-            if (result?.Answers != null)
+            var results = generateAnswerResponse?.Answers?.Where(a => a.Score > 0);
+            if (results != null)
             {
-                foreach (QnAAnswer item in result.Answers)
+                foreach (QnAAnswer item in results)
                 {
                     List<ColumnInfo> answerFields = JsonConvert.DeserializeObject<List<ColumnInfo>>(kbInfo.AnswerFields);
                     JObject answerObj = JsonConvert.DeserializeObject<JObject>(item.Answer);
