@@ -81,10 +81,11 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
                 string user = activity.From.Id;
                 string tenant = activity.GetTenantId();
                 string jwt = this.jwtHelper.GenerateJWT(activity.From.Id, activity.From.Properties["aadObjectId"].ToString(), activity.GetTenantId(), this.jwtLifetimeInMinutes);
+                string sessionId = Guid.NewGuid().ToString();
 
                 TaskInfo taskInfo = new TaskInfo()
                 {
-                    Url = $"https://{this.appBaseDomain}/search?token={jwt}&theme={{theme}}",
+                    Url = $"https://{this.appBaseDomain}/search?token={jwt}&sessionId={sessionId}&theme={{theme}}",
                     Title = Strings.MessagingExtensionTitle,
                     Width = WidthInPixels,
                     Height = HeightInPixels,
@@ -93,6 +94,13 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
                 {
                     Task = new TaskContinueResult(taskInfo),
                 };
+
+                // Log invocation of messaging extension
+                this.logProvider.LogEvent("SearchSessionStarted", new Dictionary<string, string>
+                {
+                    { "SessionId", sessionId },
+                });
+
                 return this.Request.CreateResponse(HttpStatusCode.OK, taskEnvelope);
             }
             else if (activity.Name == "composeExtension/submitAction")
@@ -147,7 +155,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
                     {
                         new AdaptiveOpenUrlAction()
                         {
-                            Url = new Uri(this.CreateListItemUrl(selectedSearchResult.SharePointURL, selectedSearchResult.Id)),
+                            Url = new Uri(this.CreateListItemUrl(selectedSearchResult.SharePointListUrl, selectedSearchResult.ListItemId)),
                             Title = Strings.ResultCardButtonTitle,
                         },
                     },
@@ -172,6 +180,15 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
                         AttachmentLayout = AttachmentLayoutTypes.List,
                     },
                 };
+
+                // Log that the search result was selected and turned into a card
+                this.logProvider.LogEvent("SearchResultShared", new Dictionary<string, string>
+                {
+                    { "KnowledgeBaseId", selectedSearchResult.KBId },
+                    { "ListItemId", selectedSearchResult.ListItemId },
+                    { "SessionId", selectedSearchResult.SessionId },
+                });
+
                 return this.Request.CreateResponse(HttpStatusCode.OK, composeExtensionResponse);
             }
 
@@ -206,15 +223,15 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
         // Create URL to a SharePoint list item
         private string CreateListItemUrl(string listUrl, string itemId)
         {
+            var itemUrl = listUrl;
+
             var finalSlashIndex = listUrl.LastIndexOf('/');
             if (finalSlashIndex > 0)
             {
-                return listUrl.Substring(0, finalSlashIndex) + "/DispForm.aspx?ID=" + itemId;
+                itemUrl = listUrl.Substring(0, finalSlashIndex) + "/DispForm.aspx?ID=" + itemId;
             }
-            else
-            {
-                return listUrl;
-            }
+
+            return listUrl;
         }
     }
 }

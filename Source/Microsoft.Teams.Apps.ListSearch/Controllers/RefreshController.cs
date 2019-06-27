@@ -88,31 +88,32 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
 
         private async Task RefreshKnowledgeBaseAsync(KBInfo kb, Guid correlationId, System.Threading.CancellationToken cancelToken)
         {
+            Exception refreshError = null;
+
             try
             {
                 await this.refreshHelper.RefreshKnowledgeBaseAsync(kb, correlationId);
-
-                this.logProvider.LogEvent(
-                    "KnowledgeBaseRefreshSuccess",
-                    properties: new Dictionary<string, string>
-                    {
-                        { "KnowledgeBaseId", kb.KBId },
-                    },
-                    correlationId: correlationId);
             }
             catch (Exception ex)
             {
-                this.logProvider.LogEvent(
-                    "KnowledgeBaseRefreshFailure",
-                    properties: new Dictionary<string, string>
-                    {
-                        { "KnowledgeBaseId", kb.KBId },
-                        { "LastRefreshDateTime", kb.LastRefreshDateTime.ToString("u") },
-                        { "ErrorMessage", ex.Message },
-                    },
-                    correlationId: correlationId);
+                refreshError = ex;
                 this.logProvider.LogWarning($"Failed to refresh KB {kb.KBId}: {ex.Message}", exception: ex, correlationId: correlationId);
             }
+
+            // Log success/failure of the knowledge base refresh
+            var properties = new Dictionary<string, string>
+            {
+                { "KnowledgeBaseId", kb.KBId },
+                { "KnowledgeBaseName", kb.KBName },
+                { "Success", (refreshError != null).ToString() },
+            };
+            if (refreshError != null)
+            {
+                properties["LastRefreshDateTime"] = kb.LastRefreshDateTime.ToString("u");
+                properties["ErrorMessage"] = refreshError.Message;
+            }
+
+            this.logProvider.LogEvent("KnowledgeBaseRefresh", properties, correlationId: correlationId);
         }
     }
 }

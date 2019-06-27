@@ -81,16 +81,17 @@
             return queryParams;
         }
 
-        var params = getQueryParameters();
+        let params = getQueryParameters();
+        let token = params["token"];
+        let sessionId = params["sessionId"];
         setTheme(params["theme"]);
     </script>
     <script>
-        var token = '@ViewData["token"]';
-        var doneTypingInterval = @System.Configuration.ConfigurationManager.AppSettings["SearchDelayInMilliseconds"];
-        var typingTimer;
-        var $input;
-        var selectedKbId;           // ID of selected knowledge base
-        var currentSearchText;      // Current search text
+        let doneTypingInterval = @System.Configuration.ConfigurationManager.AppSettings["SearchDelayInMilliseconds"];
+        let typingTimer;
+        let $input;
+        let selectedKbId;           // ID of selected knowledge base
+        let currentSearchText;      // Current search text
 
         $(function () {
             // Save input box and attach handlers
@@ -136,7 +137,7 @@
             $("#comboboxText").removeClass("placeholder-text");
             $("#searchListName").text(kbName);
 
-            var question = element.attr("data-question-display-name");
+            let question = element.attr("data-question-display-name");
             $("#searchFieldDisplayName").text(question);
             $input.val("");
             $("#searchKeywordDiv").show();
@@ -193,7 +194,7 @@
 
         // Handle click on a search result
         function listItemClick(answer, question, id) {
-            var payload = {
+            let payload = {
                 kbId: selectedKbId,
                 answer: answer,
                 question: question,
@@ -234,7 +235,8 @@
 
         // Share the selected card
         function shareCard(card) {
-            microsoftTeams.tasks.submitTask(card);
+            card["sessionId"] = sessionId;
+            microsoftTeams.tasks.submitTask(JSON.stringify(card));
         }
     </script>
 </body>

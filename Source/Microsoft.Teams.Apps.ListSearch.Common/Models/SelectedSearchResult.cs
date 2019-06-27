@@ -30,15 +30,21 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Models
         public string Question { get; set; }
 
         /// <summary>
-        /// Gets or sets sharePoint url
+        /// Gets or sets the URL of the SharePoint list
         /// </summary>
-        [JsonProperty("sharepointURL")]
-        public string SharePointURL { get; set; }
+        [JsonProperty("sharePointUrl")]
+        public string SharePointListUrl { get; set; }
 
         /// <summary>
-        /// Gets or sets Id
+        /// Gets or sets the id of the list item
         /// </summary>
-        [JsonProperty("id")]
-        public string Id { get; set; }
+        [JsonProperty("listItemId")]
+        public string ListItemId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the search session id
+        /// </summary>
+        [JsonProperty("sessionId")]
+        public string SessionId { get; set; }
     }
 }

@@ -5,16 +5,10 @@
     <div>
         @foreach (Microsoft.Teams.Apps.ListSearch.Common.Models.SelectedSearchResult item in Model)
         {
-            System.Text.StringBuilder sb = new System.Text.StringBuilder();
-            foreach (var answer in item.Answers)
-            {
-                sb.Append(answer.Answer + " | ");
-            }
-            sb.Remove(sb.Length - 3, 3);
             var answers = Newtonsoft.Json.JsonConvert.SerializeObject(item.Answers);
-            <div class="resultItem" onclick='javascript: listItemClick(JSON.stringify(@answers),"@item.Question", "@item.Id")'>
+            <div class="resultItem" onclick='listItemClick(JSON.stringify(@answers),"@item.Question", "@item.ListItemId")'>
                 <div class="searchResultsQuestionText">@item.Question</div>
-                <div class="searchResultsAnswerText">@sb.ToString()</div>
+                <div class="searchResultsAnswerText">@(string.Join(" | ", item.Answers.Select(a => a.Answer)))</div>
             </div>
         }
     </div>

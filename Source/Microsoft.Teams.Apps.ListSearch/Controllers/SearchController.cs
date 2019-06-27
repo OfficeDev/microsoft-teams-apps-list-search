@@ -52,13 +52,12 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
         /// Search View
         /// </summary>
         /// <param name="token">jwt auth token.</param>
+        /// <param name="sessionId">search session id.</param>
         /// <returns><see cref="ActionResult"/> representing Search view.</returns>
         [JwtExceptionFilter]
-        public async Task<ActionResult> Index(string token)
+        public async Task<ActionResult> Index(string token, string sessionId)
         {
             this.jwtHelper.ValidateJWT(token, this.tenantId);
-
-            this.ViewData["token"] = token;
 
             var kbList = await this.kbInfoHelper.GetAllKBs(
                 new string[]
@@ -83,8 +82,6 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
         {
             this.ValidateAuthorizationHeader();
 
-            this.ViewData["searchKeyword"] = searchedKeyword;
-
             var kbInfo = await this.kbInfoHelper.GetKBInfo(kbId);
             this.Session["SharePointUrl"] = kbInfo.SharePointUrl;
 
@@ -105,7 +102,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
                         KBId = kbId,
                         Question = item.Questions[0],
                         Answers = answers,
-                        Id = answerObj["id"].ToString(),
+                        ListItemId = answerObj["id"].ToString(),
                     });
                 }
             }
@@ -131,8 +128,8 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
                 KBId = kbId,
                 Question = question,
                 Answers = answers,
-                Id = id,
-                SharePointURL = this.Session["SharePointUrl"].ToString(),
+                ListItemId = id,
+                SharePointListUrl = this.Session["SharePointUrl"].ToString(),
             };
 
             return this.PartialView(selectedSearchResult);
