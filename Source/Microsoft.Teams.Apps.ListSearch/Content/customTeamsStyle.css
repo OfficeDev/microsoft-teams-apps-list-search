@@ -24,7 +24,7 @@ body {
 }
 
 .surface {
-    background: transparent !important;
+    background: #fff !important;
 }
 
 .flex-column {
@@ -215,7 +215,7 @@ body {
 
 .labelOverwrite {
     font-size: 12px !important;
-    font-family: 'Segoe UI' !important;
+    font-family: 'Segoe UI', Tahoma, Helvetica, sans-serif !important;
     color: #252424;
     opacity: 0.75 !important;
     margin-bottom: 6px;
@@ -244,7 +244,7 @@ body {
     padding-bottom: 7px;
     color: #252424;
     opacity: 1;
-    font-family: 'Segoe UI' !important;
+    font-family: 'Segoe UI', Tahoma, Helvetica, sans-serif !important;
     font-size: 14px;
 }
 
