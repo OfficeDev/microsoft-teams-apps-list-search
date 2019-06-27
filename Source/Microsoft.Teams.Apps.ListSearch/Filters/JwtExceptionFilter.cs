@@ -9,7 +9,6 @@ namespace Microsoft.Teams.Apps.ListSearch.Filters
     using Microsoft.IdentityModel.Tokens;
     using Microsoft.Teams.Apps.Common.Extensions;
     using Microsoft.Teams.Apps.Common.Logging;
-    using Microsoft.Teams.Apps.ListSearch.Common.Models;
 
     /// <summary>
     /// Custom exception handler for JWT validation errors
@@ -40,12 +39,12 @@ namespace Microsoft.Teams.Apps.ListSearch.Filters
             {
                 if (ex.Message.Contains(LifetimeValidationFailedExceptionCode))
                 {
-                    logProvider.LogWarning("Access denied: Expired JWT", exception: ex);
+                    logProvider.LogInfo("Access denied: Expired JWT");
                     errorCode = "SessionExpired";
                 }
                 else
                 {
-                    logProvider.LogWarning("Access denied: Invalid JWT", exception: ex);
+                    logProvider.LogInfo("Access denied: Invalid JWT");
                     errorCode = "Unauthorized";
                 }
             }

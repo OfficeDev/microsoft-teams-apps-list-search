@@ -12,7 +12,6 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
     using Microsoft.Teams.Apps.Common.Logging;
     using Microsoft.Teams.Apps.ListSearch.Common.Helpers;
     using Microsoft.Teams.Apps.ListSearch.Common.Models;
-    using Microsoft.Teams.Apps.ListSearch.Filters;
 
     /// <summary>
     /// Controller to refresh the KB.
@@ -41,9 +40,13 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
         /// </summary>
         /// <returns><see cref="Task"/> to refresh KBs.</returns>
         [HttpPost]
-        [RefreshAuthenticationFilter]
         public async Task<IHttpActionResult> RefreshAllKBs()
         {
+            if (!this.ValidateAuthorizationHeader())
+            {
+                return this.Unauthorized();
+            }
+
             this.logProvider.LogInfo("Refreshing all knowledge bases");
 
             List<KBInfo> kbList = await this.kbInfoHelper.GetAllKBs(
@@ -114,6 +117,14 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
             }
 
             this.logProvider.LogEvent("KnowledgeBaseRefresh", properties, correlationId: correlationId);
+        }
+
+        // Validate the value of the Authorize header
+        private bool ValidateAuthorizationHeader()
+        {
+            var authorization = this.Request.Headers.Authorization;
+            return (authorization?.Scheme?.ToLowerInvariant() == "bearer") &&
+                (authorization.Parameter == System.Configuration.ConfigurationManager.AppSettings["RefreshEndpointKey"]);
         }
     }
 }

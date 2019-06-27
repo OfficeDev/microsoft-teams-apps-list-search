@@ -44,7 +44,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
         /// <param name="botTenantId">Tenant Id of bot</param>
         /// <param name="jwtExpiryMinutes">minutes in which jwt expires</param>
         /// <returns><see cref="string"/> that represents generated jwt</returns>
-        public string GenerateJWT(string userTeamsId, string userAadId, string botTenantId, int jwtExpiryMinutes)
+        public string GenerateToken(string userTeamsId, string userAadId, string botTenantId, int jwtExpiryMinutes)
         {
             SymmetricSecurityKey signingKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(this.jwtSecurityKey));
             SigningCredentials signingCredentials = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);
@@ -78,7 +78,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Helpers
         /// <param name="jwt">jwt to be validated</param>
         /// <param name="acceptingTenantId">TenantId of web app</param>
         /// <returns><see cref="bool"/> representing success/failure of jwt validation</returns>
-        public bool ValidateJWT(string jwt, string acceptingTenantId)
+        public bool ValidateToken(string jwt, string acceptingTenantId)
         {
             SymmetricSecurityKey signingKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(this.jwtSecurityKey));
             TokenValidationParameters validationParameters = new TokenValidationParameters()

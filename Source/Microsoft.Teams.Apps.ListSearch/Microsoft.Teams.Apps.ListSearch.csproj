@@ -228,7 +228,6 @@
     <Compile Include="Controllers\RefreshController.cs" />
     <Compile Include="Controllers\SearchController.cs" />
     <Compile Include="Filters\JwtExceptionFilter.cs" />
-    <Compile Include="Filters\RefreshAuthenticationFilter.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>

@@ -80,7 +80,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
             {
                 string user = activity.From.Id;
                 string tenant = activity.GetTenantId();
-                string jwt = this.jwtHelper.GenerateJWT(activity.From.Id, activity.From.Properties["aadObjectId"].ToString(), activity.GetTenantId(), this.jwtLifetimeInMinutes);
+                string jwt = this.jwtHelper.GenerateToken(activity.From.Id, activity.From.Properties["aadObjectId"].ToString(), activity.GetTenantId(), this.jwtLifetimeInMinutes);
                 string sessionId = Guid.NewGuid().ToString();
 
                 TaskInfo taskInfo = new TaskInfo()
@@ -208,6 +208,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
                 { "ActivityType", activity.Type },
                 { "ActivityName", activity.Name },
                 { "UserAadObjectId", fromObjectId },
+                { "TenantId", activity.GetTenantId() },
                 {
                     "ConversationType",
                     string.IsNullOrWhiteSpace(activity.Conversation?.ConversationType) ? "personal" : activity.Conversation.ConversationType

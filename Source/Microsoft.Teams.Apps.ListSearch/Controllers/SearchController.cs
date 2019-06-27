@@ -58,7 +58,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
         [JwtExceptionFilter]
         public async Task<ActionResult> Index(string token, string sessionId)
         {
-            this.jwtHelper.ValidateJWT(token, this.tenantId);
+            this.jwtHelper.ValidateToken(token, this.tenantId);
 
             var kbList = await this.kbInfoHelper.GetAllKBs(
                 new string[]
@@ -147,7 +147,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
                 token = authHeader.Split(' ')[1];
             }
 
-            this.jwtHelper.ValidateJWT(token, this.tenantId);
+            this.jwtHelper.ValidateToken(token, this.tenantId);
 
             return token;
         }
