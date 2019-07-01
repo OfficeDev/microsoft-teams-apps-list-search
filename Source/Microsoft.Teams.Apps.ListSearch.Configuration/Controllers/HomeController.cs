@@ -121,9 +121,9 @@ namespace Microsoft.Teams.Apps.ListSearch.Configuration.Controllers
                 {
                     kbInfo.RowKey = kbId;
                     kbInfo.PartitionKey = StorageInfo.KBInfoTablePartitionKey;
+                    kbInfo.RankerType = RankerTypes.AutoSuggestQuestion;
                     kbInfo.LastRefreshDateTime = new DateTime(1601, 1, 1, 0, 0, 0, DateTimeKind.Utc);
                     kbInfo.LastRefreshAttemptDateTime = new DateTime(1601, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-                    kbInfo.LastRefreshAttemptError = null;
                     await this.kbInfoHelper.InsertOrMergeKBInfo(kbInfo);
                 }
                 else

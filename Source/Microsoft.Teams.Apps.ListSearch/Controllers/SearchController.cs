@@ -25,7 +25,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
     public class SearchController : Controller
     {
         private readonly JwtHelper jwtHelper;
-        private readonly int topResultsToBeFetched = 5;
+        private readonly int topResultsToBeFetched;
         private readonly int minimumConfidenceScore;
         private readonly string tenantId;
         private readonly ILogProvider logProvider;
@@ -46,6 +46,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
             this.kbInfoHelper = kbInfoHelper;
             this.qnaMakerService = qnaMakerService;
             this.logProvider = logProvider;
+            this.topResultsToBeFetched = Convert.ToInt32(ConfigurationManager.AppSettings["TopResultCount"]);
             this.minimumConfidenceScore = Convert.ToInt32(ConfigurationManager.AppSettings["MinimumConfidenceScore"]);
         }
 
@@ -83,29 +84,41 @@ namespace Microsoft.Teams.Apps.ListSearch.Controllers
         {
             this.ValidateAuthorizationHeader();
 
-            var kbInfo = await this.kbInfoHelper.GetKBInfo(kbId);
-            this.Session["SharePointUrl"] = kbInfo.SharePointUrl;
-
-            var generateAnswerRequest = new GenerateAnswerRequest(searchedKeyword, this.topResultsToBeFetched, this.minimumConfidenceScore);
-            var generateAnswerResponse = await this.qnaMakerService.GenerateAnswerAsync(kbId, generateAnswerRequest);
-
             List<SelectedSearchResult> selectedSearchResults = new List<SelectedSearchResult>();
-            var results = generateAnswerResponse?.Answers?.Where(a => a.Score > 0);
-            if (results != null)
-            {
-                foreach (QnAAnswer item in results)
-                {
-                    List<ColumnInfo> answerFields = JsonConvert.DeserializeObject<List<ColumnInfo>>(kbInfo.AnswerFields);
-                    JObject answerObj = JsonConvert.DeserializeObject<JObject>(item.Answer);
-                    List<DeserializedAnswer> answers = this.DeserializeAnswers(answerObj, answerFields);
 
-                    selectedSearchResults.Add(new SelectedSearchResult()
+            if (!string.IsNullOrWhiteSpace(searchedKeyword))
+            {
+                searchedKeyword = searchedKeyword.Trim();
+
+                var kbInfo = await this.kbInfoHelper.GetKBInfo(kbId);
+                this.Session["SharePointUrl"] = kbInfo.SharePointUrl;
+
+                var generateAnswerRequest = new GenerateAnswerRequest
+                {
+                    Question = searchedKeyword,
+                    Top = this.topResultsToBeFetched,
+                    ScoreThreshold = this.minimumConfidenceScore,
+                    RankerType = kbInfo.RankerType ?? RankerTypes.QuestionOnly,     // Default to QuestionOnly for older KBs
+                };
+                var generateAnswerResponse = await this.qnaMakerService.GenerateAnswerAsync(kbId, generateAnswerRequest);
+
+                var results = generateAnswerResponse?.Answers?.Where(a => a.Score > 0);
+                if (results != null)
+                {
+                    foreach (QnAAnswer item in results)
                     {
-                        KBId = kbId,
-                        Question = item.Questions[0],
-                        Answers = answers,
-                        ListItemId = answerObj["id"].ToString(),
-                    });
+                        List<ColumnInfo> answerFields = JsonConvert.DeserializeObject<List<ColumnInfo>>(kbInfo.AnswerFields);
+                        JObject answerObj = JsonConvert.DeserializeObject<JObject>(item.Answer);
+                        List<DeserializedAnswer> answers = this.DeserializeAnswers(answerObj, answerFields);
+
+                        selectedSearchResults.Add(new SelectedSearchResult()
+                        {
+                            KBId = kbId,
+                            Question = item.Questions[0],
+                            Answers = answers,
+                            ListItemId = answerObj["id"].ToString(),
+                        });
+                    }
                 }
             }
 

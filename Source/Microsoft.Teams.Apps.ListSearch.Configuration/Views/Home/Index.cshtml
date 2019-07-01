@@ -93,7 +93,7 @@
                             @Html.ActionLink("Edit", "ConfigureList", "Home", new { id = kb.KBId }, new { @class = "btn btn-default btn-sm disableAction" })
                     </div>
                     <div class="col-sm-1">
-                            @Html.ActionLink("Delete", "DeleteKB", "Home", new { id = kb.KBId }, new { onclick = "return confirm('Are you sure you want to Delete?')", @class = "btn btn-default  btn-sm disableAction" })
+                            @Html.ActionLink("Delete", "DeleteKB", "Home", new { id = kb.KBId }, new { onclick = "return confirm('Are you sure you want to remove this list?')", @class = "btn btn-default  btn-sm disableAction" })
                     </div>
                 </div>
                 <hr />

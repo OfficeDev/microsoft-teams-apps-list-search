@@ -102,5 +102,11 @@ namespace Microsoft.Teams.Apps.ListSearch.Common.Models
         /// </summary>
         [JsonProperty("LastRefreshAttemptError")]
         public string LastRefreshAttemptError { get; set; }
+
+        /// <summary>
+        /// Gets or sets the ranker type to use when querying this knowledge base
+        /// </summary>
+        [JsonProperty("RankerType")]
+        public string RankerType { get; set; }
     }
 }

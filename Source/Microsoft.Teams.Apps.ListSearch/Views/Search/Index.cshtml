@@ -166,30 +166,34 @@
 
         // Update the search results from service
         function updateSearchResults(text) {
-            $.ajax({
-                type: "GET",
-                beforeSend: function (request) {
-                    request.setRequestHeader("Authorization", "bearer " + token);
-                },
-                url: '@Url.Action("SearchResults")',
-                data: { searchedKeyword: text, kbId: selectedKbId },
-                success: function (result) {
-                    if (!isSearchTextChanged(text)) {       // Don't update result if the user has changed the search term
-                        $("#resultsList").html(result);
+            if (text) {
+                $.ajax({
+                    type: "GET",
+                    beforeSend: function (request) {
+                        request.setRequestHeader("Authorization", "bearer " + token);
+                    },
+                    url: '@Url.Action("SearchResults")',
+                    data: { searchedKeyword: text, kbId: selectedKbId },
+                    success: function (result) {
+                        if (!isSearchTextChanged(text)) {       // Don't update result if the user has changed the search term
+                            $("#resultsList").html(result);
 
-                        $("#loader").hide();
-                        $("#resultsList").show();
-                        $("#resultsError").hide();
+                            $("#loader").hide();
+                            $("#resultsList").show();
+                            $("#resultsError").hide();
+                        }
+                    },
+                    error: function () {
+                        if (!isSearchTextChanged(text)) {
+                            $("#loader").hide();
+                            $("#resultsList").hide();
+                            $("#resultsError").show();
+                        }
                     }
-                },
-                error: function () {
-                    if (!isSearchTextChanged(text)) {
-                        $("#loader").hide();
-                        $("#resultsList").hide();
-                        $("#resultsError").show();
-                    }
-                }
-            });
+                });
+            } else {
+                $("#resultsList").html("");
+            }
         }
 
         // Handle click on a search result

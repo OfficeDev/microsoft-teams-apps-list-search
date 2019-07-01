@@ -121,6 +121,7 @@
     <Compile Include="Models\QnAMakerOperationStates.cs" />
     <Compile Include="Models\QnAMakerResponse.cs" />
     <Compile Include="Models\AzureADTokenResponse.cs" />
+    <Compile Include="Models\RankerTypes.cs" />
     <Compile Include="Models\SelectedSearchResult.cs" />
     <Compile Include="Models\GenerateAnswerRequest.cs" />
     <Compile Include="Models\GenerateAnswerResponse.cs" />
