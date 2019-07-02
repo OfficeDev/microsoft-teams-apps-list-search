@@ -1,103 +1,100 @@
 ﻿@using Microsoft.Teams.Apps.ListSearch.Configuration.Models
-@using System.Globalization
+@using Microsoft.Teams.Apps.Common;
 @{
     ViewBag.Title = "Home Page";
 }
 
 @model HomeViewModel
 
-<div class="container">
-    <div>
+<div class="row">
+    <div class="col-xs-12">
         <h2>Home</h2>
     </div>
-    <br />
-    <div>
-        <div class="row">
-            <div class="col-xs-6">
-                <button type="button" id="addNewSharepointList" class="btn disableAction btnPurple" onclick="location.href='@Url.Action("ConfigureList", "Home")'">Add a new SharePoint list</button>
-            </div>
-            <div class="col-xs-4">
-                @if (Model.SharePointUserUpn == null)
-                {
-                    <script type="text/javascript">
-                        $(document).ready(function () {
-                            $(".disableAction").attr("disabled", true);
-                            $(".disableAction").addClass("disableLinkButton");
-                        })
-                    </script>
-                    <div>
-                        <input type="button" class="btn btnPurple" id="btnSetSharepointUser" value="Set SharePoint user" onclick="location.href='@Url.Action("LoginAsSharepointUser", "Home")'" />
-                    </div>
-                }
-                else
-                {
-                    <div>
-                        <label align="left">Access SharePoint as:</label>
-                        <div class="form-inline">
-                            <div class="form-group">
-                                <img src="~/Content/Images/userIcon.png" class="sharePointUserIcon" />
-                            </div>
-                            <div class="form-group" align="left">
-                                <label class="userEmail">@Model.SharePointUserUpn </label>
-                            </div>
-                            <div class="form-group">
-                                <a href="#" class="btn-link btn-sm" onclick="location.href='@Url.Action("LoginAsSharepointUser", "Home")'">Change</a>
-                            </div>
-                        </div>
-                    </div>
-                }
-            </div>
-        </div>
+</div>
+<div class="row">
+    <div class="col-xs-4">
+        <button type="button" id="addNewSharepointList" class="btn disableAction btnPurple" onclick="location.href='@Url.Action("ConfigureList", "Home" )'">Add a new SharePoint list</button>
     </div>
-    <br />
-    <div>
-        <div class="col-xs-12 col-sm-12">
-            @if (Model.KBList.Count == 0)
-            {
-                <div class="row">
-                    <label>No SharePoint lists to show</label>
+    <div class="col-xs-8">
+        @if (Model.SharePointUserUpn == null)
+        {
+            <script type="text/javascript">
+                $(document).ready(function () {
+                    $(".disableAction").attr("disabled", true);
+                    $(".disableAction").addClass("disableLinkButton");
+                })
+            </script>
+            <div class="accessSharePoint">
+                <input type="button" class="btn btnPurple" id="btnSetSharepointUser" value="Set SharePoint user" onclick="location.href='@Url.Action("LoginAsSharePointUser", "Home" )'" />
+            </div>
+        }
+        else
+        {
+            <div class="accessSharePoint">
+                <label class="accessSharePoint">Access SharePoint as:</label>
+
+                <div class="form-inline">
+                    <label class="userEmail">@Model.SharePointUserUpn</label>
+                    <a href="#" class="btn-link btn-sm accessSharePointChange" onclick="location.href='@Url.Action("LoginAsSharePointUser", "Home" )'">Change</a>
                 </div>
-            }
-            else
-            {
-                <div class="row">
-                    <div class="col-sm-4">
-                        <label>SharePoint list</label>
-                    </div>
-                    <div class="col-sm-2">
-                        <label>Refresh frequency</label>
-                    </div>
-                    <div class="col-sm-2">
-                        <label>Last refreshed</label>
-                    </div>
-                    <div class="col-sm-1">
-                    </div>
-                    <div class="col-sm-1">
-                    </div>
-                </div>
-            }
-            <hr />
-            @foreach (var kb in Model.KBList)
-            {
-                <div class="row">
-                    <div class="col-sm-4">
-                        <a class="text">@kb.KBName</a>
-                    </div>
-                    <div class="col-sm-2">
-                        <label class="fontUnset">@kb.RefreshFrequencyInHours hours</label>
-                    </div>
-                    <div class="col-sm-2">
-                        <label class="fontUnset">@kb.LastRefreshDateTime.ToString("g", CultureInfo.CurrentCulture)</label>
-                    </div>
-                    <div class="col-sm-1">
-                            @Html.ActionLink("Edit", "ConfigureList", "Home", new { id = kb.KBId }, new { @class = "btn btn-default btn-sm disableAction" })
-                    </div>
-                    <div class="col-sm-1">
-                            @Html.ActionLink("Delete", "DeleteKB", "Home", new { id = kb.KBId }, new { onclick = "return confirm('Are you sure you want to remove this list?')", @class = "btn btn-default  btn-sm disableAction" })
-                    </div>
-                </div>
-                <hr />
-            }
-        </div>
+            </div>
+        }
     </div>
 </div>
+
+<br />
+
+@if (Model.KBList.Count == 0)
+{
+    <div class="row">
+        <label>No SharePoint lists to show</label>
+    </div>
+}
+else
+{
+    <div class="row listGridRowSpaceAndLabelSpace">
+        <div class="col-xs-4">
+            <label>SharePoint list</label>
+        </div>
+        <div class="col-xs-3">
+            <label>Refresh frequency</label>
+        </div>
+        <div class="col-xs-3">
+            <label>Last refreshed</label>
+        </div>
+        <div class="col-xs-1">
+        </div>
+        <div class="col-xs-1">
+        </div>
+    </div>
+}
+@foreach (var kb in Model.KBList)
+{
+    var unixTimeStamp = (long)(kb.LastRefreshDateTime - CommonConstant.Epoch).TotalMilliseconds;
+    <div class="row listGridRowSpaceAndLabelSpace">
+        <div class="col-xs-4 listGridTextCenter">
+            <a class="text" href="@kb.SharePointUrl" target="_blank">@kb.KBName</a>
+        </div>
+        <div class="col-xs-3 listGridTextCenter">
+            <label class="fontUnset">@kb.RefreshFrequencyInHours hours</label>
+        </div>
+        <div class="col-xs-3 listGridTextCenter">
+            <label class="fontUnset"><time datetime="@kb.LastRefreshDateTime.ToString("u")" data-epochtime="@unixTimeStamp.ToString("D")"></time></label>
+        </div>
+        <div class="col-xs-1">
+            @Html.ActionLink("Edit", "ConfigureList", "Home", new { id = kb.KBId }, new { @class = "btn btn-default btn-sm btnPurple disableAction" })
+        </div>
+        <div class="col-xs-1">
+            @Html.ActionLink("Delete", "DeleteKB", "Home", new { id = kb.KBId }, new { onclick = "return confirm('Are you sure you want to remove this list?')", @class = "btn btn-default  btn-sm btnPurple disableAction" })
+        </div>
+    </div>
+}
+
+<script>
+    $(document).ready(function () {
+        $("time").each(function () {
+            var epochDate = new Date($(this).data("epochtime"));
+            $(this).text(epochDate.toLocaleString());
+        });
+    });
+</script>

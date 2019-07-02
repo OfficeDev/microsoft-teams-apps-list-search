@@ -65,7 +65,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Configuration.Controllers
         /// Login As SharePoint User
         /// </summary>
         [HttpGet]
-        public void LoginAsSharepointUser()
+        public void LoginAsSharePointUser()
         {
             this.HttpContext.GetOwinContext().Authentication.Challenge(
                     new AuthenticationProperties { RedirectUri = "/" },
@@ -174,6 +174,7 @@ namespace Microsoft.Teams.Apps.ListSearch.Configuration.Controllers
                     nameof(KBInfo.QuestionField),
                     nameof(KBInfo.AnswerFields),
                     nameof(KBInfo.SharePointSiteId),
+                    nameof(KBInfo.SharePointUrl),
                     nameof(KBInfo.LastRefreshAttemptError),
                });
 
