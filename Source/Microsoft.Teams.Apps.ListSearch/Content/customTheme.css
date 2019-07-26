@@ -2,74 +2,102 @@
     color: #fff !important;
 }
 
-.theme-dark.surface {
-    background: #2d2c2c !important;
-}
+    .theme-dark.surface {
+        background: #2d2c2c !important;
+    }
 
-.theme-dark .labelOverwrite {
-    color: inherit !important;
-}
+    .theme-dark .labelOverwrite {
+        color: inherit !important;
+    }
 
-.theme-dark .placeholder-text {
-    color: inherit !important;
-}
+    .theme-dark .placeholder-text {
+        color: inherit !important;
+    }
 
-.theme-dark .select {
-    background-color: #201f1f !important;
-    color: inherit !important;
-}
+    .theme-dark .select {
+        background-color: #201f1f !important;
+        color: inherit !important;
+    }
 
-.theme-dark .resultItem:hover {    
-    background: #3b3a39;    
-}
+    .theme-dark .resultItem:hover {
+        background: #3b3a39;
+    }
 
-.theme-dark .select-items {
-    background-color: #2d2c2c !important;    
-    border-top: .1rem solid #6264a7 !important;
-}
+    .theme-dark .resultItem:focus {
+        background: #3b3a39;
+        outline: none;
+    }
 
-.theme-dark .select-item:hover {
-    background-color: #3b3a39;
-}
+    .theme-dark .select-items {
+        background-color: #2d2c2c !important;
+        border-top: .1rem solid #6264a7 !important;
+    }
+
+    .theme-dark .select-item:hover {
+        background-color: #3b3a39;
+    }
+
+
+    .theme-dark .select-item:focus {
+        background-color: #3b3a39;
+        outline: none;
+    }
 
 .theme-contrast {
     color: #fff !important;
 }
 
-.theme-contrast.surface {
-    background: #000 !important;
-}
+    .theme-contrast.surface {
+        background: #000 !important;
+    }
 
-.theme-contrast .labelOverwrite {
-    color: inherit !important;
-}
+    .theme-contrast .labelOverwrite {
+        color: inherit !important;
+    }
 
-.theme-contrast .placeholder-text {
-    color: inherit !important;
-}
+    .theme-contrast .placeholder-text {
+        color: inherit !important;
+    }
 
-.theme-contrast .select {
-    background-color: #000 !important;
-    border: .1rem solid #fff;
-    color: inherit !important;
-}
+    .theme-contrast .select {
+        background-color: #000 !important;
+        border: .1rem solid #fff;
+        color: inherit !important;
+    }
 
-.theme-contrast .resultItem:hover {
-    background: rgb(255, 255, 1) !important;
-    color: rgb(0, 0, 0) !important;
-}
+    .theme-contrast .resultItem:hover {
+        background: rgb(255, 255, 1) !important;
+        color: rgb(0, 0, 0) !important;
+    }
 
-.theme-contrast .select-items {
-    background-color: #000 !important;    
-    border: .1rem solid #fff;
-    border-top: .1rem solid rgb(255, 255, 1) !important;
-}
+    .theme-contrast .resultItem:focus {
+        background: rgb(255, 255, 1) !important;
+        color: rgb(0, 0, 0) !important;
+        outline: none;
+    }
 
-.theme-contrast .select-item:hover {
-    background-color: rgb(255, 255, 1) !important;
-    color: rgb(0, 0, 0) !important;
-}
+    .theme-contrast .select-items {
+        background-color: #000 !important;
+        border: .1rem solid #fff;
+        border-top: .1rem solid rgb(255, 255, 1) !important;
+    }
 
-.theme-contrast .input-field {
-    border: .1rem solid #fff;
-}
+    .theme-contrast .select-item:hover {
+        background-color: rgb(255, 255, 1) !important;
+        color: rgb(0, 0, 0) !important;
+    }
+
+    .theme-contrast .select-item:focus {
+        background-color: rgb(255, 255, 1) !important;
+        color: rgb(0, 0, 0) !important;
+    }
+
+    .theme-contrast .input-field {
+        border: .1rem solid #fff;
+    }
+    .theme-contrast .select-wrapper:focus {
+        outline-color: #FFFF01;
+    }
+    .theme-contrast #resultItems:focus {
+        outline-color: #FFFF01;
+    }

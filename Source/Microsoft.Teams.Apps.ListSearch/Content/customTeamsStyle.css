@@ -53,10 +53,24 @@ body {
     margin-left: .8rem;
 }
 
+    .button-secondary:focus {
+        outline-color: #6264A7;
+    }
+
 #resultsList {
     overflow-y: auto;
     overflow-x: hidden;
 }
+
+#resultItems {
+    list-style-type: none;
+    padding: 0;
+}
+
+    #resultItems:focus {
+        outline-color: transparent;
+        border: solid 2px #6264A7;
+    }
 
 .resultItem {
     padding-top: .8rem;
@@ -64,10 +78,16 @@ body {
     cursor: pointer;
 }
 
-.resultItem:hover {
-    opacity: 1;
-    background-color: #F3F2F1;
-}
+    .resultItem:hover {
+        opacity: 1;
+        background-color: #F3F2F1;
+    }
+
+    .resultItem:focus {
+        opacity: 1;
+        background-color: #F3F2F1;
+        outline: none;
+    }
 
 .resultsTextCentered {
     display: flex;
@@ -179,6 +199,11 @@ body {
     margin-bottom: 12px;
 }
 
+    .select-wrapper:focus {
+        outline-color: transparent;
+        border-bottom: solid 2px #6264A7;
+    }
+
 .select-item {
     padding-left: 16px;
     padding-right: 16px;
@@ -187,9 +212,14 @@ body {
     padding-bottom: 7px;
 }
 
-.select-item:hover {
-    background-color: #f3f2f1;
-}
+    .select-item:hover {
+        background-color: #f3f2f1;
+    }
+
+    .select-item:focus {
+        background-color: #f3f2f1;
+        outline: none;
+    }
 
 .select-items::-webkit-scrollbar {
     width: 7px;

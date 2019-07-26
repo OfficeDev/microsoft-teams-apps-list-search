@@ -2,16 +2,16 @@
 
 @if (Model != null && Model.Count != 0)
 {
-    <div>
+    <ul id="resultItems" tabindex="0">
         @foreach (Microsoft.Teams.Apps.ListSearch.Common.Models.SelectedSearchResult item in Model)
         {
             var answers = Newtonsoft.Json.JsonConvert.SerializeObject(item.Answers);
-            <div class="resultItem" onclick='listItemClick(JSON.stringify(@answers),"@item.Question", "@item.ListItemId")'>
+            <li class="resultItem" tabindex="-1" onclick='listItemClick(JSON.stringify(@answers),"@item.Question", "@item.ListItemId")'>
                 <div class="searchResultsQuestionText">@item.Question</div>
                 <div class="searchResultsAnswerText">@(string.Join(" | ", item.Answers.Select(a => a.Answer)))</div>
-            </div>
+            </li>
         }
-    </div>
+    </ul>
 }
 else
 {
@@ -19,3 +19,37 @@ else
         <span class="noResultsMessage">Sorry, no results found. Try another search term.</span>
     </div>
 }
+<script>
+    //To Navigate the each result item with up and down keys
+    $(".resultItem").on("keydown", function (event) {
+        event.stopPropagation();
+        var resultItem = $(this);
+        switch (event.which) {
+            case KEY_ENTER:  // Enter key
+                resultItem.click();
+                break;
+            case KEY_UP: // Up arrow key
+                resultItem.prev().focus();
+                if (resultItem.prev().length === 0) {
+                    resultItem.nextAll().focus();
+                    event.preventDefault();
+                }
+                break;
+            case KEY_DOWN: // Down arrow key
+                resultItem.next().focus();
+                if (resultItem.next().length === 0) {
+                    resultItem.prevAll().focus();
+                    event.preventDefault();
+                }
+                break;
+        }
+    });
+
+    $("#resultItems").on("keydown", function (event) {
+        event.stopPropagation();
+        if (event.which === KEY_ENTER || event.which === KEY_DOWN) {
+            $(".resultItem").first().focus();
+            event.preventDefault();
+        }
+    });
+</script>

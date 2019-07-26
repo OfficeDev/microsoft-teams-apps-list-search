@@ -1,7 +1,7 @@
 ﻿@model Microsoft.Teams.Apps.ListSearch.Common.Models.SelectedSearchResult
 
 <div class="flex-column">
-    <div class="flex-1">
+    <div id="searchResultContent" class="flex-1">
         <div class="selectedQuestion font-bold">@Model.Question</div>
         @{
             var JsonSerializerSettings = new Newtonsoft.Json.JsonSerializerSettings()
@@ -22,7 +22,10 @@
         </table>
     </div>
     <div class="actionButtonsRow">
-        <button onclick='shareCard(@(json))' class="button-primary">Share</button>
-        <button onclick="goBackToSearchResults()" class="button-secondary">Back</button>
+        <button onclick='shareCard(@(json))' tabindex="2" class="button-primary">Share</button>
+        <button onclick="goBackToSearchResults()" tabindex="1" class="button-secondary">Back</button>
+        <script>      
+            $(".button-secondary").focus();
+        </script>
     </div>
 </div>

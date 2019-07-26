@@ -16,22 +16,22 @@
     <div class="flex-column">
         <!-- Search input and list of results -->
         <div id="searchPanel" class="flex-column flex-1">
-            <div class="select-wrapper">
-                <button role="combobox" class="select" data-toggle="dropdown">
-                    <i aria-hidden="true" class="icon-base icon-arrowdown"></i>
-                    <span id="comboboxText" class="placeholder-text">Select the list to search</span>
+            <div class="select-wrapper" tabindex="0" aria-labelledby="comboboxText">
+                <button role="combobox" tabindex="-1" class="select" data-toggle="dropdown">
+                    <i aria-hidden="true" tabindex="-1" class="icon-base icon-arrowdown"></i>
+                    <span id="comboboxText" tabindex="-1" class="placeholder-text">Select the list to search</span>
                 </button>
-                <ul class="select-items dropdown-menu">
+                <ul class="select-items dropdown-menu" tabindex="-1">
                     @foreach (var kb in Model)
                     {
-                        <li class="select-item" id="@Html.AttributeEncode(@kb.KBId)" data-question-display-name="@Html.AttributeEncode(kb.QuestionFieldDisplayName)">@kb.KBName</li>
+                        <li class="select-item" tabindex="-1" id="@Html.AttributeEncode(@kb.KBId)" data-question-display-name="@Html.AttributeEncode(kb.QuestionFieldDisplayName)">@kb.KBName</li>
                     }
                 </ul>
             </div>
             <div id="searchKeywordDiv" class="searchBarDiv" style="display: none">
-                <div class="labelOverwrite">Search by <span id="searchFieldDisplayName"></span></div>
+                <div id="searchLabelDescription" class="labelOverwrite">Search by <span id="searchFieldDisplayName"></span></div>
                 <div><i aria-hidden="true" class="icon-base icon-search"></i></div>
-                <input id="inpSearchBox" placeholder="Search" class="input-field inputSearchBox" />
+                <input id="inpSearchBox" aria-labelledby="searchLabelDescription" placeholder="Search" class="input-field inputSearchBox" />
             </div>
             <div class="flex-column flex-1">
                 <div id="loader" style="display: none">
@@ -50,8 +50,8 @@
         </div>
 
         <!-- Result card -->
-        <div id="resultPanel" class="flex-column flex-1" style="display: none">
-            <div class="resultCardHeading">Searching <span id="searchTerm" class='font-bold'></span> in <span id="searchListName" class='font-bold'></span></div>
+        <div id="resultPanel" class="flex-column flex-1" aria-live="polite" aria-labelledby="searchDescription searchResultContent" style="display: none">
+            <div id="searchDescription" class="resultCardHeading">Searching <span id="searchTerm" class='font-bold'></span> in <span id="searchListName" class='font-bold'></span></div>
             <hr class="resultCardSeparator" />
             <div id="resultCardViewContainer" class="flex-1"></div>
         </div>
@@ -86,15 +86,24 @@
         let sessionId = params["sessionId"];
         setTheme(params["theme"]);
     </script>
+
+
     <script>
         let doneTypingInterval = @System.Configuration.ConfigurationManager.AppSettings["SearchDelayInMilliseconds"];
         let typingTimer;
         let $input;
         let selectedKbId;           // ID of selected knowledge base
-        let currentSearchText;      // Current search text
+        let currentSearchText = ""; // Current search text
+
+        var KEY_ENTER = 13;
+        var KEY_UP = 38;
+        var KEY_DOWN = 40;
+        var KEY_ESCAPE = 27;
+        var KEY_TAB = 9;
 
         $(function () {
             // Save input box and attach handlers
+            $(".select-wrapper").focus();
             $input = $('#inpSearchBox');
             $input.on('keyup', function () {
                 clearTimeout(typingTimer);
@@ -139,6 +148,7 @@
 
             let question = element.attr("data-question-display-name");
             $("#searchFieldDisplayName").text(question);
+
             $input.val("");
             $("#searchKeywordDiv").show();
 
@@ -177,7 +187,6 @@
                     success: function (result) {
                         if (!isSearchTextChanged(text)) {       // Don't update result if the user has changed the search term
                             $("#resultsList").html(result);
-
                             $("#loader").hide();
                             $("#resultsList").show();
                             $("#resultsError").hide();
@@ -242,6 +251,59 @@
             card["sessionId"] = sessionId;
             microsoftTeams.tasks.submitTask(JSON.stringify(card));
         }
+
+        //Event to expand the dropdown items when user press the enter key and focus the first item
+        $(".select-wrapper").on("keydown", function (event) {
+            event.stopPropagation();
+            var combobox = $(this);
+            if (event.which === KEY_ENTER || event.which === KEY_DOWN) {
+                if (combobox.find("button").attr("aria-expanded") != "true") {
+                    combobox.find("button").click();                    
+                }
+                $(".dropdown-menu>li").first().focus();
+            }
+
+            if (event.which === KEY_TAB || event.which === KEY_ESCAPE) {
+                if (combobox.find("button").attr("aria-expanded") == "true") {
+                    combobox.find("button").click();
+                    combobox.focus();
+                }
+            }
+        });
+
+        // Event to navigate the list items with up and down arrows and to select the list item with enter key
+        $(".dropdown-menu>li").on("keydown", function (event) {
+            event.stopPropagation();
+            var liElement = $(this);
+            switch (event.which) {
+                case KEY_ENTER: // Enter key
+                    liElement.click();
+                    break;
+                case KEY_UP: // Up arrow key
+                    liElement.prev().focus();
+                    if (liElement.prev().length === 0) {
+                        liElement.nextAll().focus();
+                        event.preventDefault();
+                    }
+                    break;
+                case KEY_DOWN: // Down arrow key
+                    liElement.next().focus();
+                    if (liElement.next().length === 0) {
+                        liElement.prevAll().focus();
+                        event.preventDefault();
+                    }
+                    break;
+                case KEY_ESCAPE:
+                case KEY_TAB:
+                    var combobox = $(".select-wrapper");
+                    if (combobox.find("button").attr("aria-expanded") == "true") {
+                        combobox.find("button").click();
+                        combobox.focus();
+                    }
+                    break;
+
+            }
+        });
     </script>
 </body>
 </html>
