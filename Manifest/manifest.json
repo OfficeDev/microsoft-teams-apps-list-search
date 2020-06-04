@@ -1,6 +1,6 @@
 {
-  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.4/MicrosoftTeams.schema.json",
-  "manifestVersion": "1.4",
+  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.7/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.7",
   "version": "1.0.0",
   "id": "53be03ee-7339-4d0b-b4dc-124336355ea1",
   "packageName": "com.microsoft.teams.listsearch",
